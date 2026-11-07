@@ -25,7 +25,7 @@ A descoberta de quem vende e dos preços observados continua no Noah, independen
 
 Consuma somente dados públicos publicados no navegador. Edições editoriais usam o MCP/OAuth com a autoridade da pessoa autenticada e as revisões esperadas. Não crie CMS paralelo ou copie segredos para a página. Instalar a skill não autoriza publicar conteúdo ou ativar um microapp; siga as permissões da tarefa e o protocolo de confirmação retornado pelo Noah.
 
-Capacidade real é comprovada pelo SDK instalado e pelo servidor do ambiente. No kit atual, checkout Noah ainda depende de entrega própria: não invente `startCheckout()` ou cobrança usando preços fiscais. Use as jornadas reais de consulta/orçamento da empresa enquanto essa capacidade não estiver disponível. Recurso ausente fica registrado como pendência, sem bloquear trabalho independente.
+Capacidade real é comprovada pelo SDK instalado e pelo servidor do ambiente. No kit atual, checkout Noah ainda depende de entrega própria: não invente `startCheckout()` ou cobrança usando preços fiscais. Preserve um checkout próprio já operacional como comércio da empresa, sem atribuí-lo ao Noah; se houver apenas consulta/orçamento, mantenha esse rótulo. Recurso ausente fica registrado como pendência, sem bloquear trabalho independente.
 
 ## Verificar e entregar
 
