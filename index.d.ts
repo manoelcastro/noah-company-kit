@@ -167,3 +167,12 @@ export function mountNoahControls(options: {
   nonce?: string;
   documentObject?: Document;
 }): Promise<{ close(): void }>;
+
+/** Image wrapper, never an inferred local catalog identity. Restores its styles on close. */
+export function mountNoahProductActions(options: {
+  client: CompanyAppClient;
+  noahOrigin: string;
+  element: HTMLElement;
+  productId: string;
+  nonce?: string;
+}): { open(): void; close(): void };

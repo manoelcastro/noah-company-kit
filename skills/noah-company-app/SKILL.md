@@ -31,6 +31,8 @@ Capacidade real é comprovada pelo SDK instalado e pelo servidor do ambiente. No
 
 Faça o build e os testes relevantes do projeto. Exercite o mesmo código no acesso direto e incorporado, em mobile e desktop; valide estados vazios/erro, paginação, origem/slug, menu, tema, cabeçalhos e privacidade das requisições. Dentro do Noah, não mostre “Abrir o Noah” e não sobreponha duas barras inferiores. Use os controles do SDK ou integre as mesmas ações ao visual próprio.
 
+O ícone **oa** usa menu radial por pressão longa e arraste, com alternativa por toque/clique e teclado. Integre também `mountNoahProductActions()` nas imagens com `productId` Noah confirmado, mantendo toque curto e rolagem normais. Desmonte controles ao trocar os elementos/produtos. Teste seleção única ao soltar e cancelamento no centro, fora das opções e em gesto interrompido. Não associe uma imagem de demonstração a produto Noah por aproximação.
+
 Valide o CMS com uma revisão real autorizada quando fizer parte da entrega: rascunho não altera a publicação; publicação confirmada aparece na leitura pública e na página. Não execute essa mutação apenas para testar uma tarefa que não a autoriza.
 
 Atualize o registro com versão/SHA do kit, empresa e ambiente confirmados, fonte do catálogo, estado do CMS e checkout, evidências dos dois modos e pendências. Build aprovado não comprova incorporação ou publicação reais. Se depender de sessão, claim ou registro da URL, indique exatamente o próximo passo e conclua o restante autorizado.

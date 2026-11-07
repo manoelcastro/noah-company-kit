@@ -1,4 +1,4 @@
-# SDK de páginas empresariais do Noah (piloto 0.4)
+# SDK de páginas empresariais do Noah (piloto 0.5)
 
 Pacote sem dependências para páginas feitas pela própria empresa ou por um agente de desenvolvimento. **A mesma página funciona no domínio da empresa e incorporada no Noah.** `createNoahCompanyClient()` oferece uma interface única: no Noah usa a ponte de mensagens; no domínio próprio consulta a API pública por HTTPS, sem cookie ou token. O catálogo recebido é uma projeção pública dos produtos observados daquela empresa.
 
@@ -18,16 +18,16 @@ Siga [`INSTALL.md`](INSTALL.md) para obter a revisão atual verificada do reposi
 npm install --save-exact 'https://github.com/manoelcastro/noah-company-kit/archive/SHA_COMPLETO.tar.gz'
 ```
 
-Como alternativa offline, entregue o arquivo `noah-company-web-0.4.0.tgz` gerado por `npm pack` e instale com `npm install --save ./noah-company-web-0.4.0.tgz`, mantendo o arquivo no projeto e registrando sua origem/revisão. O pacote inclui o SDK, a skill e os templates.
+Como alternativa offline, entregue o arquivo `noah-company-web-0.5.0.tgz` gerado por `npm pack` e instale com `npm install --save ./noah-company-web-0.5.0.tgz`, mantendo o arquivo no projeto e registrando sua origem/revisão. O pacote inclui o SDK, a skill e os templates.
 
-O kit é distribuído por Git e arquivo `.tgz`; `private: true` impede publicação acidental no registro npm e não impede instalar pelo repositório. Para uma página estática sem bundler, copie **o arquivo ESM versionado sem alterá-lo** para `dist/js/noah-company.v0.4.0.js` e importe com caminho relativo. Se houver PWA, inclua o arquivo no cache do shell e incremente a versão do service worker.
+O kit é distribuído por Git e arquivo `.tgz`; `private: true` impede publicação acidental no registro npm e não impede instalar pelo repositório. Para uma página estática sem bundler, copie **o arquivo ESM versionado sem alterá-lo** para `dist/js/noah-company.v0.5.0.js` e importe com caminho relativo. Se houver PWA, inclua o arquivo no cache do shell e incremente a versão do service worker.
 
 ## Código da página da empresa
 
 ```js
 // Com bundler: from '@noah/company-web'.
-// Na Te Pinta estática: from './noah-company.v0.4.0.js'.
-import { createNoahCompanyClient } from './noah-company.v0.4.0.js';
+// Na Te Pinta estática: from './noah-company.v0.5.0.js'.
+import { createNoahCompanyClient } from './noah-company.v0.5.0.js';
 
 const noah = createNoahCompanyClient({
   noahOrigin: 'https://dev.noahero.com',
@@ -52,7 +52,29 @@ O selo deste piloto é **nota apresentada**, com publicação até 90 dias após
 
 O botão **Abrir o Noah** é opcional no domínio da empresa e aparece apenas depois de `connect()` devolver `mode: 'standalone'`. No modo incorporado, a navegação é fornecida pelo host. Durante a conexão, mantenha esse botão oculto para evitar a exibição transitória na versão incorporada.
 
-Para incluir os controles prontos, importe `mountNoahControls` e use `await mountNoahControls({ client: noah, noahOrigin, bottomOffset: 88 })`. O componente fornece o ícone do Noah, seguir e curtir em uma barra flutuante. Ajuste o deslocamento à altura do menu da empresa e à área segura do celular. O retorno `close()` remove os controles. Para personalizar o visual, use `openNoahMenu()`, `openSocialActions()` e `setControlsMounted()` a partir dos próprios botões.
+Para incluir os controles prontos, importe `mountNoahControls` e use `await mountNoahControls({ client: noah, noahOrigin, bottomOffset: 88 })`. O componente apresenta apenas o ícone **oa** recolhido. Segurar por cerca de 420 ms expande as ações ao redor do ponto inicial: Noah, Seguir, Curtir e Avaliar. Arraste sem levantar o dedo; a opção destacada é acionada ao soltar. Soltar no centro ou fora das opções cancela. O arco se orienta para o espaço disponível nas bordas da tela.
+
+Clique ou toque curto no ícone abre o mesmo menu para escolher com outro toque. Enter/Espaço e setas oferecem acesso por teclado; Escape fecha e devolve o foco ao ícone. A animação respeita movimento reduzido. Ajuste `bottomOffset` à altura do menu da empresa e à área segura. O retorno `close()` remove controles e gestos pendentes. Para controles próprios, use as operações tipadas de `openNoahMenu()`, `openSocialActions()` e `setControlsMounted()`.
+
+### Ações nas imagens de produtos
+
+O SDK também fornece o gesto contextual e um pequeno botão **oa** acessível sobre a imagem. Use um contêiner **não interativo** (por exemplo, `div`) que contenha a imagem e, se necessário, seu link normal:
+
+```js
+import { mountNoahProductActions } from '@noah/company-web';
+
+const productActions = mountNoahProductActions({
+  client: noah,
+  noahOrigin,
+  element: document.querySelector('#product-photo'), // div que contém a imagem
+  productId: confirmedNoahProductId,
+});
+// Ao desmontar ou trocar o produto: productActions.close();
+```
+
+Na imagem, um toque curto preserva o link normal. Um movimento antes de completar o tempo de pressão cancela a abertura e permite rolar. Depois de abrir, o arraste escolhe a ação do **produto**, não da empresa. Um segundo dedo, cancelamento do navegador, rolagem, perda de foco ou Escape interrompe o gesto sem executar ação. O botão oa da imagem abre as mesmas opções por toque/clique ou teclado.
+
+Passe somente `productId` Noah confirmado, nunca ID local, slug presumido ou associação por semelhança do nome. Uma imagem de demonstração sem esse vínculo não recebe ações Noah de produto. Desmonte o controle antes de reutilizar o contêiner com outro produto; os estilos ajustados pelo SDK são restaurados no `close()`. Não adicione o botão diretamente dentro de um `a` ou `img`; o contêiner externo evita controles interativos aninhados. Esta interação não substitui a prova exigida para avaliar nem o formulário autenticado de seguir/curtir.
 
 Dentro do Noah, as ações abrem o menu nativo do host. A gravação de seguir e curtir ocorre após o clique da pessoa nessa interface autenticada. No domínio independente, os controles abrem a interface do Noah. `getReactionSummary()` fornece os totais públicos. Essas duas reações exigem conta autenticada. Avaliações com texto continuam exigindo a nota elegível.
 
@@ -134,3 +156,5 @@ Preserve o contrato de conteúdo e os IDs de produto/variante que a empresa já 
 ## Verificação
 
 `npm test` exercita a conexão, isolamento por empresa, origem exata, projeção pública, rejeição de ações inválidas e tema. O teste de integração no Noah exigirá registro da URL, sessão real de empresa e inspeção de cabeçalhos de iframe no ambiente QA.
+
+`npm run test:browser` testa o menu radial com Playwright/Chromium, incluindo entrada touch real do navegador via CDP em fixtures isoladas: pressionar/arrastar/soltar, clique único, rolagem antes do hold, cancelamentos, teclado, bordas da viewport e desmontagem. Playwright é ferramenta de desenvolvimento, sem dependência no runtime do SDK. Instale-o no ambiente de testes ou informe `NOAH_PLAYWRIGHT_PATH` e `NOAH_CHROMIUM_PATH`; `NOAH_RADIAL_REPORT` define o destino do relatório. Essa suíte não comprova o comportamento do Safari em aparelho iPhone; preserve a alternativa por toque/clique/teclado e valide no aparelho antes de declarar esse aceite.

@@ -540,69 +540,385 @@ export function createNoahCompanyClient({
   };
 }
 
-/** Optional floating controls. All authenticated actions open Noah's own interface. */
+// Shared oa geometry from the vector master, with an optical stroke for small UI sizes.
+const OA_PATHS = [
+  'M236 82 C209 49 174 32 132 32 C62 32 7 87 7 157 C7 227 62 282 132 282 C166 282 197 269 222 245 C237 269 264 283 296 283 C342 283 380 245 380 199 L380 240 C380 263 399 282 422 282 C446 282 465 263 465 240 L465 150 C465 84 414 32 347 32 C303 32 265 48 236 82 Z',
+  'M222 245 C216 231 214 216 214 200 C214 154 251 117 296 117',
+];
+
+function oaIcon(doc) {
+  const svg = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '-6.72 18.74 485.72 278.46');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '16');
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+  for (const d of OA_PATHS) {
+    const path = doc.createElementNS(svg.namespaceURI, 'path');
+    path.setAttribute('d', d);
+    svg.append(path);
+  }
+  return svg;
+}
+
+function styledShadow(doc, element, css, nonce) {
+  const shadow = element.attachShadow({ mode: 'open' });
+  const style = doc.createElement('style');
+  if (nonce) style.nonce = nonce;
+  style.textContent = css;
+  shadow.append(style);
+  return shadow;
+}
+
+function oaButton(doc, label) {
+  const button = doc.createElement('button');
+  button.type = 'button';
+  button.setAttribute('data-noah-trigger', '');
+  button.setAttribute('aria-label', label);
+  button.setAttribute('aria-haspopup', 'menu');
+  button.setAttribute('aria-expanded', 'false');
+  button.title = 'Toque ou segure para abrir as ações do Noah';
+  button.append(oaIcon(doc));
+  return button;
+}
+
+const OA_BUTTON_CSS = `
+  button { display:grid; place-items:center; width:56px; height:56px; box-sizing:border-box; padding:9px;
+    border:1px solid #e1dcec; border-radius:50%; color:#11005e; background:#fff;
+    box-shadow:0 4px 18px #11005e26; cursor:pointer; touch-action:none; -webkit-tap-highlight-color:transparent; }
+  button:hover { background:#f5f1ff; } button:focus-visible { outline:3px solid #6d42cd; outline-offset:3px; }
+  svg { width:36px; height:28px; pointer-events:none; }
+`;
+
+/** One menu engine for the company orb and product images. It never writes a reaction itself. */
+function radialActions({ client, target, trigger, surface, documentObject: doc, nonce }) {
+  const win = doc.defaultView;
+  const host = doc.createElement('div');
+  host.setAttribute('data-noah-radial-menu', '');
+  host.hidden = true;
+  const shadow = styledShadow(doc, host, `
+    :host { position:fixed; inset:0; z-index:2147483000; pointer-events:none; color:#11005e; font:600 12px system-ui,sans-serif; }
+    :host([hidden]) { display:none!important; }
+    .shade { position:absolute; inset:0; background:#11005e20; pointer-events:auto; }
+    [role=menu] { position:absolute; inset:0; pointer-events:none; }
+    button { font:inherit; color:inherit; cursor:pointer; touch-action:none; -webkit-tap-highlight-color:transparent; }
+    .action { position:absolute; width:64px; height:64px; padding:0; border:0; background:transparent;
+      transform:translate(-50%,-50%); display:flex; flex-direction:column; align-items:center; gap:3px; pointer-events:auto;
+      animation:noah-expand .16s ease-out; }
+    @keyframes noah-expand {
+      from { opacity:0; transform:translate(calc(-50% + var(--from-x)),calc(-50% + var(--from-y))) scale(.3); }
+      to { opacity:1; transform:translate(-50%,-50%) scale(1); }
+    }
+    .disc { display:grid; place-items:center; width:44px; height:44px; border:1px solid #e3dced;
+      border-radius:50%; background:white; box-shadow:0 3px 14px #11005e24; transition:transform .12s,background .12s; }
+    .disc svg { width:24px; height:22px; } .glyph { font:26px system-ui; line-height:1; }
+    .label { border-radius:8px; background:white; padding:1px 5px; white-space:nowrap; }
+    .action[data-selected] .disc, .action:focus-visible .disc { background:#11005e; color:white; transform:scale(1.12); }
+    button:focus-visible { outline:3px solid #8156d8; outline-offset:3px; border-radius:22px; }
+    .center { position:absolute; transform:translate(-50%,-50%); width:52px; height:52px; border:1px solid #e3dced;
+      border-radius:50%; background:white; pointer-events:auto; display:grid; place-items:center; box-shadow:0 3px 18px #11005e20; }
+    .center svg { width:34px; height:25px; }
+    p { position:absolute; left:50%; bottom:max(16px, env(safe-area-inset-bottom, 0px)); transform:translateX(-50%);
+      max-width:calc(100% - 40px); width:max-content; box-sizing:border-box; margin:0; padding:9px 14px;
+      background:white; border-radius:16px; text-align:center; box-shadow:0 3px 18px #11005e20; }
+    @media (prefers-reduced-motion:reduce) { .disc { transition:none; } .action { animation:none; } }
+  `, nonce);
+  const shade = doc.createElement('div');
+  shade.className = 'shade';
+  const menu = doc.createElement('div');
+  menu.setAttribute('role', 'menu');
+  menu.setAttribute('aria-label', target ? 'Ações do produto no Noah' : 'Ações da empresa no Noah');
+  const center = doc.createElement('button');
+  center.type = 'button';
+  center.className = 'center';
+  center.setAttribute('aria-label', 'Fechar ações do Noah');
+  center.tabIndex = -1;
+  center.append(oaIcon(doc));
+  const status = doc.createElement('p');
+  status.setAttribute('role', 'status');
+  status.setAttribute('aria-live', 'polite');
+  const actions = [
+    { id: 'menu', label: 'Noah', glyph: null, run: () => client.openNoahMenu(target) },
+    { id: 'follow', label: 'Seguir', glyph: '+', run: () => client.openSocialActions({ targetType: 'COMPANY', ...target, intent: 'FOLLOW' }) },
+    { id: 'like', label: 'Curtir', glyph: '♡', run: () => client.openSocialActions({ targetType: 'COMPANY', ...target, intent: 'LIKE' }) },
+    { id: 'opinion', label: 'Avaliar', glyph: '☆', run: () => client.openOpinionComposer(target ?? { targetType: 'COMPANY' }) },
+  ];
+  const removers = [];
+  const listen = (node, event, handler, options) => {
+    node.addEventListener(event, handler, options);
+    const remove = () => node.removeEventListener(event, handler, options);
+    removers.push(remove);
+    return remove;
+  };
+  let opened = false, closed = false, busy = false, selected = -1, timer, gesture;
+  let suppressClick = false, releaseGesture = () => {}, openListeners = () => {};
+  let origin = { x: 0, y: 0 }, positions = [];
+  const buttons = actions.map((action, index) => {
+    const button = doc.createElement('button');
+    button.type = 'button';
+    button.className = 'action';
+    button.tabIndex = -1;
+    button.setAttribute('role', 'menuitem');
+    button.setAttribute('aria-label', action.id === 'menu' ? 'Navegar no Noah' : action.label);
+    button.dataset.noahAction = action.id;
+    const disc = doc.createElement('span');
+    disc.className = 'disc';
+    disc.setAttribute('aria-hidden', 'true');
+    if (action.glyph) { disc.classList.add('glyph'); disc.textContent = action.glyph; }
+    else disc.append(oaIcon(doc));
+    const label = doc.createElement('span');
+    label.className = 'label'; label.textContent = action.label;
+    button.append(disc, label);
+    listen(button, 'click', event => { event.preventDefault(); event.stopPropagation(); void run(index); });
+    menu.append(button);
+    return button;
+  });
+  shadow.append(shade, menu, center, status);
+
+  function highlight(index) {
+    selected = index;
+    buttons.forEach((button, i) => button.toggleAttribute('data-selected', i === index));
+    status.textContent = index < 0 ? 'Arraste para escolher. Solte no centro para cancelar.' : `${actions[index].label} — solte para escolher`;
+  }
+  function stopGesture() {
+    clearTimeout(timer);
+    gesture = undefined;
+    releaseGesture(); releaseGesture = () => {};
+  }
+  function hide(restoreFocus = false) {
+    stopGesture();
+    opened = false; host.hidden = true; trigger.setAttribute('aria-expanded', 'false');
+    openListeners(); openListeners = () => {};
+    if (restoreFocus && trigger.isConnected) trigger.focus({ preventScroll: true });
+  }
+  async function run(index) {
+    if (closed || !opened || busy || index < 0) return;
+    stopGesture(); busy = true;
+    buttons.forEach(button => { button.disabled = true; });
+    try { await actions[index].run(); if (!closed) hide(); }
+    catch { if (!closed && opened) status.textContent = 'Não foi possível abrir o Noah. Tente novamente.'; }
+    finally { busy = false; buttons.forEach(button => { button.disabled = false; }); }
+  }
+  function layout(point) {
+    const width = win.innerWidth, height = win.innerHeight;
+    origin = { x: Math.max(40, Math.min(width - 40, point.x)), y: Math.max(40, Math.min(height - 40, point.y)) };
+    const inward = Math.atan2(height / 2 - origin.y, width / 2 - origin.x);
+    let best, score = Infinity;
+    for (const radius of [104, 88]) {
+      for (const span of [270, 180, 135, 110]) {
+        for (let rotation = 0; rotation < 360; rotation += 5) {
+          const middle = rotation * Math.PI / 180;
+          const points = actions.map((_, i) => {
+            const angle = middle + (i / (actions.length - 1) - .5) * span * Math.PI / 180;
+            return { x: origin.x + radius * Math.cos(angle), y: origin.y + radius * Math.sin(angle) };
+          });
+          if (points.some(p => p.x < 40 || p.x > width - 40 || p.y < 40 || p.y > height - 40)) continue;
+          const distance = Math.abs(Math.atan2(Math.sin(middle - inward), Math.cos(middle - inward)));
+          const candidate = (270 - span) * 10 + (104 - radius) * 10 + distance;
+          if (candidate < score) { best = points; score = candidate; }
+        }
+      }
+    }
+    // Very small resized viewports use a compact accessible grid instead of clipping actions.
+    positions = best ?? actions.map((_, i) => ({ x: width / 2 + (i % 2 ? 40 : -40), y: height / 2 + (i < 2 ? -48 : 48) }));
+    buttons.forEach((button, i) => {
+      button.style.left = `${positions[i].x}px`; button.style.top = `${positions[i].y}px`;
+      button.style.setProperty('--from-x', `${origin.x - positions[i].x}px`);
+      button.style.setProperty('--from-y', `${origin.y - positions[i].y}px`);
+    });
+    center.style.left = `${origin.x}px`; center.style.top = `${origin.y}px`;
+  }
+  function open(point, focus = true) {
+    if (closed || busy) return;
+    doc.dispatchEvent(new win.CustomEvent('noah:radial:open', { detail: host }));
+    const rect = trigger.getBoundingClientRect();
+    layout(point ?? { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 });
+    if (!host.isConnected) doc.body.append(host);
+    opened = true; host.hidden = false; trigger.setAttribute('aria-expanded', 'true'); highlight(-1);
+    openListeners();
+    const listeners = [];
+    const temporary = (node, event, handler, options) => {
+      node.addEventListener(event, handler, options);
+      listeners.push(() => node.removeEventListener(event, handler, options));
+    };
+    temporary(doc, 'noah:radial:open', event => { if (event.detail !== host) hide(); });
+    temporary(win, 'blur', () => hide());
+    temporary(win, 'resize', () => hide());
+    temporary(win, 'scroll', () => hide(), true);
+    temporary(doc, 'visibilitychange', () => { if (doc.hidden) hide(); });
+    temporary(doc, 'keydown', event => {
+      if (event.key === 'Escape') { event.preventDefault(); hide(true); }
+      else if (event.key === 'Tab') hide(true);
+      else if (['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'Home', 'End'].includes(event.key)) {
+        event.preventDefault();
+        const current = buttons.indexOf(shadow.activeElement);
+        const index = event.key === 'Home' ? 0 : event.key === 'End' ? 3
+          : (current + (['ArrowUp', 'ArrowLeft'].includes(event.key) ? -1 : 1) + 4) % 4;
+        highlight(index); buttons[index].focus({ preventScroll: true });
+      }
+    });
+    openListeners = () => listeners.splice(0).forEach(remove => remove());
+    if (focus) buttons[0].focus({ preventScroll: true });
+  }
+  function hit(x, y) {
+    if (Math.hypot(x - origin.x, y - origin.y) < 32) return -1;
+    let index = -1, distance = 38;
+    positions.forEach((point, i) => {
+      const next = Math.hypot(x - point.x, y - point.y);
+      if (next < distance) { index = i; distance = next; }
+    });
+    return index;
+  }
+  function begin(kind, id, point, pointerTarget) {
+    if (closed || busy || gesture) return;
+    suppressClick = false;
+    const current = { kind, id, ...point, held: false };
+    gesture = current;
+    const listeners = [];
+    const temporary = (node, event, handler, options) => {
+      node.addEventListener(event, handler, options);
+      listeners.push(() => node.removeEventListener(event, handler, options));
+    };
+    releaseGesture = () => {
+      listeners.splice(0).forEach(remove => remove());
+      if (kind === 'pointer' && pointerTarget.hasPointerCapture?.(id)) pointerTarget.releasePointerCapture(id);
+    };
+    const cancel = () => { const held = current.held; stopGesture(); if (held) hide(); };
+    const move = (x, y, event) => {
+      if (!current.held) { if (kind === 'touch' || Math.hypot(x - point.x, y - point.y) > 8) cancel(); return; }
+      if (kind === 'touch' && !event.cancelable) { cancel(); return; }
+      event.preventDefault(); highlight(hit(x, y));
+    };
+    const finish = (x, y, event) => {
+      const held = current.held;
+      if (held) event.preventDefault();
+      const index = held ? hit(x, y) : -1;
+      stopGesture();
+      if (held) { if (index < 0) hide(); else void run(index); }
+    };
+    temporary(win, 'blur', cancel);
+    temporary(doc, 'visibilitychange', () => { if (doc.hidden) cancel(); });
+    temporary(doc, 'touchstart', event => { if (event.touches.length > 1) cancel(); }, { passive: true, capture: true });
+    if (kind === 'touch') {
+      const pointFor = touches => [...touches].find(touch => touch.identifier === id);
+      temporary(surface, 'touchmove', event => { const p = pointFor(event.touches); if (p) move(p.clientX, p.clientY, event); }, { passive: false });
+      temporary(surface, 'touchend', event => { const p = pointFor(event.changedTouches); if (p) finish(p.clientX, p.clientY, event); }, { passive: false });
+      temporary(surface, 'touchcancel', cancel);
+    } else {
+      temporary(doc, 'pointermove', event => { if (event.pointerId === id) move(event.clientX, event.clientY, event); });
+      temporary(doc, 'pointerup', event => { if (event.pointerId === id) finish(event.clientX, event.clientY, event); });
+      temporary(doc, 'pointercancel', event => { if (event.pointerId === id) cancel(); });
+      temporary(pointerTarget, 'lostpointercapture', cancel);
+    }
+    timer = setTimeout(() => {
+      if (closed || gesture !== current) return;
+      current.held = true; suppressClick = true;
+      open(point, false);
+      if (kind === 'pointer') { try { pointerTarget.setPointerCapture(id); } catch { cancel(); } }
+    }, 420);
+  }
+  const eligible = event => event.composedPath().includes(trigger)
+    || !event.target.closest?.('button,input,select,textarea,[contenteditable=true]');
+  listen(surface, 'pointerdown', event => {
+    if (event.button !== 0 || event.isPrimary === false || !eligible(event)) return;
+    if (event.pointerType === 'touch' && 'ontouchstart' in win) return;
+    begin('pointer', event.pointerId, { x: event.clientX, y: event.clientY }, surface);
+  });
+  listen(surface, 'touchstart', event => {
+    if (event.touches.length !== 1 || !eligible(event)) return;
+    const point = event.touches[0];
+    begin('touch', point.identifier, { x: point.clientX, y: point.clientY });
+  }, { passive: true });
+  listen(surface, 'click', event => {
+    if (suppressClick && event.detail !== 0) {
+      suppressClick = false; event.preventDefault(); event.stopImmediatePropagation();
+    }
+  }, true);
+  listen(surface, 'contextmenu', event => { if (gesture) event.preventDefault(); });
+  listen(surface, 'dragstart', event => { if (gesture?.held) event.preventDefault(); else stopGesture(); });
+  listen(trigger, 'click', event => { event.preventDefault(); event.stopPropagation(); if (opened) hide(true); else open(); });
+  listen(trigger, 'keydown', event => {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault(); event.stopPropagation(); open();
+      if (event.key === 'ArrowUp') buttons.at(-1).focus({ preventScroll: true });
+    }
+  });
+  listen(shade, 'pointerdown', event => { event.preventDefault(); hide(true); });
+  listen(center, 'click', () => hide(true));
+  return {
+    open: () => open(),
+    close() { if (closed) return; hide(); closed = true; removers.forEach(remove => remove()); host.remove(); },
+  };
+}
+
+/** Floating oa orb. Hold and slide, or click and use the accessible menu. */
 export async function mountNoahControls({
   client, noahOrigin, container, bottomOffset = 88, nonce, documentObject = document,
 }) {
-  const origin = originOf(noahOrigin);
-  if (!Number.isInteger(bottomOffset) || bottomOffset < 0 || bottomOffset > 300) {
-    throw new TypeError('Invalid controls offset.');
-  }
+  originOf(noahOrigin);
+  if (!Number.isInteger(bottomOffset) || bottomOffset < 0 || bottomOffset > 300) throw new TypeError('Invalid controls offset.');
   const context = await client.connect();
   const element = documentObject.createElement('div');
   element.setAttribute('data-noah-sdk-controls', '');
-  const shadow = element.attachShadow({ mode: 'open' });
-  const style = documentObject.createElement('style');
-  if (nonce) style.nonce = nonce;
-  style.textContent = `
+  const shadow = styledShadow(documentObject, element, `
     :host { position:fixed; right:12px; bottom:calc(${bottomOffset}px + env(safe-area-inset-bottom, 0px)); z-index:1000; }
-    nav { display:flex; align-items:center; gap:6px; padding:6px; border:1px solid #dbe2ea; border-radius:28px; background:#fff; box-shadow:0 4px 20px #0f172a26; font:600 12px system-ui,sans-serif; }
-    button { min-height:40px; border:0; border-radius:20px; padding:8px 12px; background:#fff; color:#172554; cursor:pointer; font:inherit; }
-    button:hover { background:#eff6ff; } button:focus-visible { outline:3px solid #2563eb; }
-    img { width:28px; height:28px; display:block; } .brand { padding:6px; }
-    p { max-width:240px; margin:6px 0 0; padding:6px; background:#fff; color:#991b1b; }
-    p:empty { display:none; }
-  `;
-  shadow.append(style);
-  const nav = documentObject.createElement('nav');
-  nav.setAttribute('aria-label', 'Controles do Noah');
-  const status = documentObject.createElement('p');
-  status.setAttribute('role', 'status');
-  const handlers = [];
-  function button(label, action) {
-    const control = documentObject.createElement('button');
-    control.type = 'button';
-    control.textContent = label;
-    control.setAttribute('aria-label', label);
-    const click = async () => {
-      control.disabled = true;
-      status.textContent = '';
-      try { await action(); } catch { status.textContent = 'Não foi possível abrir o Noah. Tente novamente.'; }
-      finally { control.disabled = false; }
-    };
-    control.addEventListener('click', click);
-    handlers.push(() => control.removeEventListener('click', click));
-    nav.append(control);
-    return control;
-  }
-  const brand = button(context.mode === 'embedded' ? 'Menu Noah' : 'Abrir o Noah', () => client.openNoahMenu());
-  brand.className = 'brand';
-  brand.textContent = '';
-  const icon = documentObject.createElement('img');
-  icon.src = new URL('/icons/icon.svg', origin).href;
-  icon.alt = 'Noah';
-  brand.append(icon);
-  button('Seguir', () => client.openSocialActions({ targetType: 'COMPANY', intent: 'FOLLOW' }));
-  button('Curtir', () => client.openSocialActions({ targetType: 'COMPANY', intent: 'LIKE' }));
-  shadow.append(nav, status);
+    ${OA_BUTTON_CSS}
+  `, nonce);
+  const trigger = oaButton(documentObject, context.mode === 'embedded' ? 'Menu Noah' : 'Abrir o Noah');
+  shadow.append(trigger);
   (container ?? documentObject.body).append(element);
+  const radial = radialActions({ client, trigger, surface: trigger, documentObject, nonce });
   try { await client.setControlsMounted(true); }
-  catch { element.remove(); throw new Error('Noah não confirmou os controles da página.'); }
+  catch { radial.close(); element.remove(); throw new Error('Noah não confirmou os controles da página.'); }
+  let closed = false;
   return {
     close() {
-      handlers.forEach((remove) => remove());
-      element.remove();
+      if (closed) return; closed = true;
+      radial.close(); element.remove();
       void client.setControlsMounted(false).catch(() => {});
+    },
+  };
+}
+
+/** Add contextual oa actions to a non-interactive image wrapper with a confirmed Noah product ID. */
+export function mountNoahProductActions({ client, noahOrigin, element, productId, nonce }) {
+  originOf(noahOrigin);
+  if (!validProductId(productId) || !element?.ownerDocument || element.matches('img,a,button,input,select,textarea')) {
+    throw new TypeError('Use an image wrapper and a confirmed Noah product UUID.');
+  }
+  if (element.querySelector(':scope > [data-noah-sdk-product-controls]')) throw new TypeError('Product actions already mounted.');
+  const doc = element.ownerDocument;
+  const previous = new Map();
+  function setStyle(name, value) {
+    previous.set(name, [element.style.getPropertyValue(name), element.style.getPropertyPriority(name), value]);
+    element.style.setProperty(name, value);
+  }
+  if (doc.defaultView.getComputedStyle(element).position === 'static') setStyle('position', 'relative');
+  setStyle('-webkit-touch-callout', 'none');
+  setStyle('user-select', 'none');
+  const badge = doc.createElement('div');
+  badge.setAttribute('data-noah-sdk-product-controls', '');
+  const shadow = styledShadow(doc, badge, `
+    :host { position:absolute; right:10px; bottom:10px; z-index:2; }
+    ${OA_BUTTON_CSS}
+    button { width:46px; height:46px; padding:7px; } svg { width:30px; height:23px; }
+  `, nonce);
+  const trigger = oaButton(doc, 'Ações deste produto no Noah');
+  shadow.append(trigger); element.append(badge);
+  const radial = radialActions({ client, target: { targetType: 'PRODUCT', productId }, trigger, surface: element, documentObject: doc, nonce });
+  let closed = false;
+  return {
+    open: radial.open,
+    close() {
+      if (closed) return; closed = true;
+      radial.close(); badge.remove();
+      for (const [name, [value, priority, assigned]] of previous) {
+        if (element.style.getPropertyValue(name) === assigned) {
+          if (value) element.style.setProperty(name, value, priority); else element.style.removeProperty(name);
+        }
+      }
     },
   };
 }

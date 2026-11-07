@@ -25,6 +25,7 @@ Opiniões sobre a empresa usam `listCompanyOpinions()`. Opiniões de produto usa
 
 - Publique em HTTPS, em origem própria da empresa. Configure `Content-Security-Policy: frame-ancestors` como **cabeçalho HTTP** permitindo a origem Noah de QA e, quando aprovada, a de produção. Não envie `X-Frame-Options` incompatível.
 - Teste o mesmo build em acesso direto e incorporado. Em modo incorporado, respeite tema e navegação do host; mantenha saída clara para o Noah e evite duas barras inferiores concorrentes. Em acesso direto, a página continua utilizável quando o Noah está temporariamente indisponível, com estado de erro explícito para dados não atualizados.
+- Use o **oa** recolhido de `mountNoahControls()`: pressão longa abre o menu radial e soltar sobre uma ação a seleciona; toque/clique e teclado continuam disponíveis. Nas imagens com ID Noah confirmado, monte `mountNoahProductActions()` no contêiner externo da imagem e desmonte ao trocar/remover o produto. Toque curto e rolagem devem permanecer normais; imagens sem vínculo confirmado não recebem ações de produto.
 - Se a hospedagem bloquear iframe, apresente link para abrir o domínio próprio. Não use URL de iframe recebida por query string.
 - No PWA estático, inclua o arquivo ESM versionado do SDK no cache do shell e incremente a versão do service worker ao atualizá-lo. Conteúdo do CMS e preço/estoque de checkout exigem leitura fresca.
 
