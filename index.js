@@ -704,6 +704,9 @@ function radialActions({ client, target, trigger, surface, documentObject: doc, 
   function layout(point) {
     const width = win.innerWidth, height = win.innerHeight;
     origin = { x: Math.max(40, Math.min(width - 40, point.x)), y: Math.max(40, Math.min(height - 40, point.y)) };
+    // Keep the instruction opposite the gesture so it never covers an action near an edge.
+    status.style.top = origin.y > height / 2 ? 'max(16px, env(safe-area-inset-top, 0px))' : 'auto';
+    status.style.bottom = origin.y > height / 2 ? 'auto' : 'max(16px, env(safe-area-inset-bottom, 0px))';
     const inward = Math.atan2(height / 2 - origin.y, width / 2 - origin.x);
     let best, score = Infinity;
     for (const radius of [104, 88]) {

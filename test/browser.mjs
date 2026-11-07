@@ -80,6 +80,11 @@ async function assertWithinViewport(page) {
     assert(b.x >= -0.5 && b.y >= -0.5 && b.x + b.width <= viewport.width + 0.5 && b.y + b.height <= viewport.height + 0.5, `Clipped action: ${JSON.stringify(b)} in ${JSON.stringify(viewport)}`);
     assert(b.width >= 40 && b.height >= 40, `Touch action too small: ${JSON.stringify(b)}`);
   }
+  const hint=await page.locator('[data-noah-radial-menu]:visible').locator('[role=status]').boundingBox();
+  assert(hint);
+  for(const b of boxes) {
+    assert(b.x+b.width<=hint.x || b.x>=hint.x+hint.width || b.y+b.height<=hint.y || b.y>=hint.y+hint.height,'Instruction must not cover an action');
+  }
   for(let i=0;i<boxes.length;i++) for(let j=i+1;j<boxes.length;j++) {
     const a=centre(boxes[i]),b=centre(boxes[j]);
     assert(Math.hypot(a.x-b.x,a.y-b.y)>=40,'Action centres need distinct touch targets');
