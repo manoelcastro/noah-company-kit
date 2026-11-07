@@ -1,0 +1,4 @@
+interface:
+  display_name: "Noah Company App"
+  short_description: "Páginas e microapps integrados ao SDK e CMS Noah"
+  default_prompt: "Use $noah-company-app para construir a página da empresa com o briefing visual e integrar SDK, API pública e CMS Noah."
