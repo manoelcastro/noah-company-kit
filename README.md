@@ -15,7 +15,7 @@ O [briefing visual](starter/NOAH_DESIGN_BRIEF.md) pertence à empresa; o [regist
 Siga [`INSTALL.md`](INSTALL.md) para obter a revisão atual verificada do repositório oficial. Em uma página com bundler, fixe a instalação ao SHA completo obtido, usando o gerenciador do projeto. Exemplo com npm:
 
 ```sh
-npm install --save-exact 'git+https://github.com/manoelcastro/noah-company-kit.git#SHA_COMPLETO'
+npm install --save-exact 'https://github.com/manoelcastro/noah-company-kit/archive/SHA_COMPLETO.tar.gz'
 ```
 
 Como alternativa offline, entregue o arquivo `noah-company-web-0.4.0.tgz` gerado por `npm pack` e instale com `npm install --save ./noah-company-web-0.4.0.tgz`, mantendo o arquivo no projeto e registrando sua origem/revisão. O pacote inclui o SDK, a skill e os templates.

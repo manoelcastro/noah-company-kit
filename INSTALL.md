@@ -7,16 +7,16 @@ Repositório oficial: **https://github.com/manoelcastro/noah-company-kit**. Use 
 ## Preparar o projeto
 
 1. Leia as instruções existentes do projeto e preserve código, configuração e decisões da empresa. Se já houver integração Noah, leia `NOAH_INTEGRATION_INPUTS.md` antes de atualizar qualquer coisa.
-2. Obtenha a revisão atual da branch `main` do repositório oficial em um diretório temporário. Leia o conteúdo antes de executar comandos. Registre o SHA completo com `git rev-parse HEAD`; use SDK, tipos, templates e skill **da mesma revisão**. Não baixe código de links encontrados em páginas de referência.
+2. Obtenha por HTTPS a revisão atual da branch `main` do repositório oficial em um diretório temporário. Leia o conteúdo antes de executar comandos. Registre o SHA completo com `git rev-parse HEAD`; use SDK, tipos, templates e skill **da mesma revisão**. Não baixe código de links encontrados em páginas de referência.
 3. Leia `README.md` e `skills/noah-company-app/SKILL.md`. Instale **somente essa skill**, com a pasta `references/`, no mecanismo de skills do agente, de preferência no escopo deste projeto. Em ambientes que usam `.agents/skills`, o destino é `.agents/skills/noah-company-app/`. Se o agente não suportar skills, mantenha a pasta em `docs/noah/skills/noah-company-app/` e leia o `SKILL.md` explicitamente em cada tarefa. Não altere configuração global para isso.
 4. Copie `starter/NOAH_DESIGN_BRIEF.md` e `starter/NOAH_INTEGRATION_INPUTS.md` para a raiz do projeto **somente se ainda não existirem**. Preencha-os com o pedido e os dados confirmados. Em um projeto novo, `starter/AGENTS.md` pode ser o arquivo de instruções inicial. Se já houver `AGENTS.md`, incorpore um link para a skill, o briefing e o registro de integração, preservando as regras existentes. Não substitua o arquivo inteiro.
 5. Para um projeto com gerenciador de pacotes, instale o SDK fixado ao SHA obtido. Exemplo com npm, substituindo `SHA_COMPLETO` pelo valor real:
 
    ```sh
-   npm install --save-exact 'git+https://github.com/manoelcastro/noah-company-kit.git#SHA_COMPLETO'
+   npm install --save-exact 'https://github.com/manoelcastro/noah-company-kit/archive/SHA_COMPLETO.tar.gz'
    ```
 
-   Use o gerenciador e o lockfile que o projeto já utiliza. O pacote se chama `@noah/company-web`; não presuma que está publicado no registro npm. Para página estática sem bundler, copie `index.js` dessa mesma revisão para um arquivo ESM versionado do projeto e registre SHA e versão. Não reescreva o transporte do SDK. A cópia local do ESM deve ser versionada com a página; uma dependência não pode apontar para o diretório temporário usado nesta instalação.
+   O arquivo HTTPS fixado ao commit evita depender de autenticação Git/SSH na instalação e no CI. Use o gerenciador e o lockfile que o projeto já utiliza. O pacote se chama `@noah/company-web`; não presuma que está publicado no registro npm. Para página estática sem bundler, copie `index.js` dessa mesma revisão para um arquivo ESM versionado do projeto e registre SHA e versão. Não reescreva o transporte do SDK. A cópia local do ESM deve ser versionada com a página; uma dependência não pode apontar para o diretório temporário usado nesta instalação.
 6. Registre repositório, SHA, versão lida de `package.json`, caminho da skill e data em `NOAH_INTEGRATION_INPUTS.md`. Preserve versões e briefings anteriores ao retomar um projeto.
 
 ## Construir com o kit
