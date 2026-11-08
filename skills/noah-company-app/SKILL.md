@@ -21,7 +21,7 @@ Prepare a página para a empresa continuar operando por conversa: conteúdo, ban
 
 Entregue **um único webapp** para domínio próprio e incorporação no Noah. Origem Noah e slug são configuração confiável, nunca parâmetros de URL. O SDK fornece a ponte; a página não implementa um segundo `postMessage` ou autenticação Noah.
 
-Mantenha separados produto observado em nota, identidade/passaporte, conteúdo editorial da empresa, oferta comercial e estoque. Uma nota introduz candidatos sem expor comprador ou documento fiscal à empresa. Observação histórica não comprova preço vigente nem disponibilidade. Vincule conteúdo pelo `productId` confirmado; não associe variantes por semelhança de nome.
+Mantenha separados produto observado em nota, identidade/passaporte, catálogo próprio da empresa, conteúdo editorial, oferta comercial e estoque. Negócios com CPF ou CNPJ e itens próprios não precisam de nota. CPF fica privado; perfil público retorna `cnpj: null` quando não há CNPJ. Catálogo próprio usa `itemId` e declaração da empresa; não passe esse ID às ações de produto global. Para conteúdo fiscal, use `productId` confirmado. Não associe variantes por semelhança de nome nem invente evidência fiscal.
 
 A descoberta de quem vende e dos preços observados continua no Noah, independente de claim, CMS, microapp ou hospedagem da empresa. Alterações na apresentação não mudam essa fonte de verdade.
 

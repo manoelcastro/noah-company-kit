@@ -6,7 +6,7 @@ O Noah já oferece CMS e servidor MCP. Não crie outro CMS para reproduzir essas
 
 A empresa deve poder continuar pedindo mudanças por conversa. Ao construir ou adaptar a página, identifique regiões/componentes editáveis, com IDs estáveis, campos, limites, versão e ligação à fonte de conteúdo. Inclua no briefing quais pedidos devem ser suportados: trocar capa/texto, destacar produtos, ordenar seções ou apresentar campanhas. Não fixe um modelo visual igual para todas as empresas; use os componentes e o design do projeto.
 
-O CMS Noah descrito abaixo é **por produto**. No SDK 0.5 não há APIs para editar/publicar composição do site, promoções ou disponibilidade de venda. Esses contratos estão em planejamento. Use somente schemas e ferramentas efetivamente presentes no ambiente; não invente `site_*`, campos de desconto em conteúdo editorial ou produto fictício para armazenar banner. Prepare um adaptador e um contrato de conteúdo versionado do próprio projeto, preservando sua fonte existente; registre o que depende do CMS de site futuro, sem criar backend CMS paralelo ou declarar edição remota pronta.
+O CMS Noah descrito abaixo é **por produto**. No SDK 0.6 não há APIs para editar/publicar composição do site, promoções ou disponibilidade de venda. Esses contratos estão em planejamento. Use somente schemas e ferramentas efetivamente presentes no ambiente; não invente `site_*`, campos de desconto em conteúdo editorial ou produto fictício para armazenar banner. Prepare um adaptador e um contrato de conteúdo versionado do próprio projeto, preservando sua fonte existente; registre o que depende do CMS de site futuro, sem criar backend CMS paralelo ou declarar edição remota pronta.
 
 Mudanças suportadas pelo contrato editável seguem rascunho, revisão esperada, prévia/diferenças e publicação autorizada. Novo layout/componente ou funcionalidade fora desse contrato segue o código do projeto, com revisão/branch, build, preview e publicação permitida. O agente empresarial e um agente externo autorizado podem participar, com a autoridade da empresa; o assistente do consumidor não recebe essas permissões.
 
@@ -18,9 +18,19 @@ Use uma prévia real em mobile e desktop. Restauração da apresentação não a
 
 Use OAuth no cliente MCP do agente, fora do navegador público. QA usa `https://dev.noahero.com/api/mcp`; produção exige origem verificada. Descubra ferramentas e schemas com `tools/list` e confira `companyId`, slug, claim e associação ativa da pessoa autenticada. Não peça token pelo chat nem grave credenciais no projeto da página.
 
-Os escopos desta frente são `noah:company:read`, `noah:company:write` e `noah:company:confirm`, conforme a operação. Leituras privadas exigem membro ativo da empresa reivindicada; edição/publicação exige `OWNER` ou `ADMIN`. Se a empresa ainda não existir, descubra `company_create` e o fluxo de reivindicação realmente disponível, se isso estiver no escopo. Não é necessário já ter nota fiscal para cadastrar a empresa; isso não garante produtos elegíveis para o CMS.
+Os escopos desta frente são `noah:company:read`, `noah:company:write` e `noah:company:confirm`, conforme a operação. Leituras privadas exigem membro ativo da empresa reivindicada; edição/publicação exige `OWNER` ou `ADMIN`. Se a empresa ainda não existir, descubra `company_create` e o fluxo de reivindicação disponível. Cadastro aceita CNPJ ou CPF; no caminho CPF, `legalName` é o nome público do negócio e `creationKey` UUID identifica a mesma intenção em tentativas repetidas. Não coloque CPF no nome, slug, material público ou registro do projeto. Cadastro não concede posse; conclua o claim autorizado antes de gerir o catálogo.
 
-## Fluxo de conteúdo
+## Catálogo próprio sem nota fiscal
+
+No backend deste recorte, descubra `company_catalog_list_items`, `company_catalog_get_draft`, `company_catalog_upsert_draft`, `company_catalog_preview`, `company_catalog_publish`, `company_catalog_unpublish`, `company_catalog_get_items`, `company_catalog_get_item` e `company_catalog_search`. Se não estiverem presentes, o ambiente ainda não oferece essa frente; não tente contornar pelo CMS fiscal.
+
+Um item próprio tem UUID `itemId`, separado de `productId`, origem `COMPANY_DECLARATION` e conteúdo `kind` (PRODUCT/SERVICE/MENU_ITEM), `sku` opcional, `title`, `description`, `category`, `collections` e `media`. Não precisa de produto ou nota anteriores. Título e descrição são declarações da empresa, sem fonte web obrigatória; mídia exige URL HTTPS pública, licença e texto alternativo, com `sourceUrl` opcional. Não publique arquivo privado sem autorização ou invente licença.
+
+Escolha um UUID estável por item e guarde a correspondência com o catálogo recebido. Leia o rascunho antes de editar; `expectedRevision: 0` cria o primeiro, demais alterações usam a revisão lida. Preserve campos que a pessoa não pediu para mudar. Mostre a prévia/diferenças, proponha publicação e siga a confirmação de dois turnos devolvida pelo MCP. Alterar rascunho mantém a publicação anterior. Despublicar exige revisão e motivo; não apaga histórico.
+
+Após publicação, confira a leitura pública e `listCompanyItems()`/`getCompanyItem()` no SDK. O item pode ser produto, serviço ou cardápio; não tem preço/estoque/oferta neste recorte. Não atribua avaliações/passaporte de produto global a esse UUID. REST privada usa `/api/companies/{companyId}/catalog/items/{itemId}/{draft|preview|publish|unpublish}`; pública usa `/api/catalog/companies/{slug}/items` e `/{itemId}`. Busca pública usa `/api/catalog/company-items`.
+
+## Conteúdo editorial de produtos fiscais existentes
 
 | Ferramenta | Uso |
 | --- | --- |
@@ -34,7 +44,7 @@ Os escopos desta frente são `noah:company:read`, `noah:company:write` e `noah:c
 
 Leia os schemas devolvidos pelo ambiente, inclusive argumentos transversais de idempotência e confirmação. Não monte nomes de parâmetros por suposição a partir desta tabela.
 
-1. Leia os candidatos e vincule os itens do catálogo enviado pela empresa a IDs Noah comprovados. Novas notas e itens históricos usam a identidade fiscal existente, sem expor comprador ou chave da nota. Catálogo livre sem produto fiscal elegível ainda não pode ser importado por esta frente; registre os itens sem correspondência para a evolução adequada, preservando o catálogo local quando necessário.
+1. Leia os candidatos e vincule os itens a IDs Noah comprovados. Novas notas e itens históricos usam a identidade fiscal existente, sem expor comprador ou chave da nota. Um item sem correspondência fiscal pode entrar no catálogo próprio acima; preserve a distinção de IDs e proveniência.
 2. Compare marca, variante, GTIN/código e embalagem antes de vincular. Não crie outro produto para contornar uma correspondência desconhecida e não altere a identidade fiscal global por edição editorial da loja.
 3. Consulte o rascunho atual. Na primeira criação, `expectedRevision: 0`; em edição, envie a revisão realmente lida. Em conflito, releia e reconcilie com o pedido da pessoa, sem sobrescrever alterações concorrentes.
 4. Salve conteúdo com fontes verificáveis e direitos declarados para a mídia. Uma edição de produto já publicado cria rascunho; a publicação anterior permanece até nova confirmação.

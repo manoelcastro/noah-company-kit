@@ -1,8 +1,8 @@
-# SDK de páginas empresariais do Noah (piloto 0.5)
+# SDK de páginas empresariais do Noah (piloto 0.6)
 
 Pacote sem dependências para páginas feitas pela própria empresa ou por um agente de desenvolvimento. **A mesma página funciona no domínio da empresa e incorporada no Noah.** `createNoahCompanyClient()` oferece uma interface única: no Noah usa a ponte de mensagens; no domínio próprio consulta a API pública por HTTPS, sem cookie ou token. O catálogo recebido é uma projeção pública dos produtos observados daquela empresa.
 
-O navegador lê produtos observados e conteúdo editorial publicado. O agente autorizado usa o CMS por MCP para editar rascunhos e propor publicação. O contrato para projetos externos está em [`starter/AGENTS.md`](starter/AGENTS.md). Checkout Noah ainda está pendente; preserve as jornadas reais de consulta/orçamento da empresa.
+O navegador lê produtos observados, conteúdo editorial publicado e **catálogo próprio da empresa sem nota fiscal**. O agente autorizado usa o CMS por MCP para editar rascunhos e propor publicação. O contrato para projetos externos está em [`starter/AGENTS.md`](starter/AGENTS.md). Checkout Noah ainda está pendente; preserve as jornadas reais de consulta/orçamento da empresa. O SDK 0.6 requer o backend com catálogo próprio e cadastro CPF; confira as ferramentas disponíveis no ambiente antes de utilizá-los.
 
 ## Entrega para agentes de páginas
 
@@ -10,7 +10,7 @@ Use o [prompt de instalação](starter/PROMPT_DE_INSTALACAO.md), preenchendo ref
 
 O [briefing visual](starter/NOAH_DESIGN_BRIEF.md) pertence à empresa; o [registro de integração](starter/NOAH_INTEGRATION_INPUTS.md) guarda empresa, ambiente, SHA e versão. Preserve esses arquivos e as instruções existentes ao retomar um projeto. O kit não impõe framework ou layout. Para um projeto já instalado, use [`starter/PROMPT_PARA_AGENTE.md`](starter/PROMPT_PARA_AGENTE.md).
 
-O construtor também prepara a operação futura por prompt: regiões editáveis com IDs estáveis, schemas e fonte de conteúdo separados do renderer. O [guia de autoria e CMS](skills/noah-company-app/references/cms.md) distingue apresentação, regras comerciais e revisão de código. O SDK 0.5 ainda não possui APIs para editar composição do site, promoções ou disponibilidade; essas capacidades estão em planejamento. O prompt estável continua o mesmo, e a skill orienta a preparação sem anunciar serviços inexistentes.
+O construtor também prepara a operação futura por prompt: regiões editáveis com IDs estáveis, schemas e fonte de conteúdo separados do renderer. O [guia de autoria e CMS](skills/noah-company-app/references/cms.md) distingue apresentação, regras comerciais e revisão de código. O SDK 0.6 ainda não possui APIs para editar composição do site, promoções ou disponibilidade; essas capacidades estão em planejamento. O prompt estável continua o mesmo, e a skill orienta a preparação sem anunciar serviços inexistentes.
 
 ## Instalação durante o desenvolvimento
 
@@ -20,16 +20,16 @@ Siga [`INSTALL.md`](INSTALL.md) para obter a revisão atual verificada do reposi
 npm install --save-exact 'https://github.com/manoelcastro/noah-company-kit/archive/SHA_COMPLETO.tar.gz'
 ```
 
-Como alternativa offline, entregue o arquivo `noah-company-web-0.5.0.tgz` gerado por `npm pack` e instale com `npm install --save ./noah-company-web-0.5.0.tgz`, mantendo o arquivo no projeto e registrando sua origem/revisão. O pacote inclui o SDK, a skill e os templates.
+Como alternativa offline, entregue o arquivo `noah-company-web-0.6.0.tgz` gerado por `npm pack` e instale com `npm install --save ./noah-company-web-0.6.0.tgz`, mantendo o arquivo no projeto e registrando sua origem/revisão. O pacote inclui o SDK, a skill e os templates.
 
-O kit é distribuído por Git e arquivo `.tgz`; `private: true` impede publicação acidental no registro npm e não impede instalar pelo repositório. Para uma página estática sem bundler, copie **o arquivo ESM versionado sem alterá-lo** para `dist/js/noah-company.v0.5.0.js` e importe com caminho relativo. Se houver PWA, inclua o arquivo no cache do shell e incremente a versão do service worker.
+O kit é distribuído por Git e arquivo `.tgz`; `private: true` impede publicação acidental no registro npm e não impede instalar pelo repositório. Para uma página estática sem bundler, copie **o arquivo ESM versionado sem alterá-lo** para `dist/js/noah-company.v0.6.0.js` e importe com caminho relativo. Se houver PWA, inclua o arquivo no cache do shell e incremente a versão do service worker.
 
 ## Código da página da empresa
 
 ```js
 // Com bundler: from '@noah/company-web'.
-// Na Te Pinta estática: from './noah-company.v0.5.0.js'.
-import { createNoahCompanyClient } from './noah-company.v0.5.0.js';
+// Na Te Pinta estática: from './noah-company.v0.6.0.js'.
+import { createNoahCompanyClient } from './noah-company.v0.6.0.js';
 
 const noah = createNoahCompanyClient({
   noahOrigin: 'https://dev.noahero.com',
@@ -40,6 +40,8 @@ const context = await noah.connect(); // embedded ou standalone
 const company = await noah.getCompanyProfile();
 const observed = await noah.listObservedProducts({ limit: 24 });
 const published = await noah.listPublishedProducts({ limit: 24 });
+const ownCatalog = await noah.listCompanyItems({ limit: 24 });
+// ownCatalog.items usa itemId e source COMPANY_DECLARATION, sem preço fiscal.
 const opinions = await noah.listCompanyOpinions();
 // observed.products são pistas fiscais, não ofertas comerciais da loja.
 console.log(context.mode, observed.products.length, published.items.length);
@@ -48,7 +50,7 @@ console.log(context.mode, observed.products.length, published.items.length);
 
 Configure `noahOrigin` e `companySlug` no build ou na configuração confiável da página. Nunca obtenha a origem ou o slug de um parâmetro de URL. O cliente rejeita mensagens de outra origem ou janela, confere o slug associado pelo Noah e usa sessão própria para cada incorporação. Em `auto`, se a página estiver dentro de outro site que não responde à ponte Noah, após um curto tempo ela continua como página independente.
 
-A empresa ativa abre diretamente sua página customizada na rota `/suppliers/{slug}` do Noah. A página renderiza nome, CNPJ, contato, endereço e localização com `getCompanyProfile()`, de acordo com os campos disponíveis. A verificação de localização acompanha o dado. A vitrine apresenta opiniões da empresa com `listCompanyOpinions()` e opiniões de um produto explicitamente associado com `listProductOpinions(productId)`. Produto e empresa têm alvos próprios.
+A empresa ativa abre diretamente sua página customizada na rota `/suppliers/{slug}` do Noah. A página renderiza nome, contato, endereço, localização e CNPJ quando disponível com `getCompanyProfile()`. Negócio cadastrado com CPF recebe `cnpj: null`; CPF nunca faz parte do perfil público ou do SDK. A verificação de localização acompanha o dado. A vitrine apresenta opiniões da empresa com `listCompanyOpinions()` e opiniões de um produto explicitamente associado com `listProductOpinions(productId)`. Produto e empresa têm alvos próprios.
 
 O selo deste piloto é **nota apresentada**, com publicação até 90 dias após a compra. Renderize o texto e pseudônimo retornados e vincule cada trecho a `new URL(opinion.citationPath, noahOrigin)`. Para publicar, use `openOpinionComposer({ targetType: 'COMPANY' })` ou `openOpinionComposer({ targetType: 'PRODUCT', productId })`. O formulário do Noah confere a sessão e a nota elegível. Pedidos de opinião e preferências de convite usam o MCP e as telas autenticadas.
 
@@ -134,6 +136,8 @@ Na VPS, configure o mesmo **cabeçalho de resposta** no servidor web. Após publ
 | `getCompanyProfile()` | ponte quando incorporado; API pública quando independente | dados públicos completos da empresa |
 | `listObservedProducts()` | ponte quando incorporado; API pública quando independente | empresa e produtos públicos, paginados |
 | `listPublishedProducts()` | API pública nos dois modos | produtos e revisões editoriais publicados, paginados |
+| `listCompanyItems()` | API pública nos dois modos | catálogo próprio publicado, sem dependência de nota |
+| `getCompanyItem(itemId)` | API pública nos dois modos | revisão pública de um item comercial da empresa |
 | `listCompanyOpinions()` | API pública nos dois modos | opiniões sobre a empresa vinculada à página |
 | `listProductOpinions(id)` | API pública nos dois modos | opiniões do produto, compartilhadas entre revendedores |
 | `openOpinionComposer()` | ponte ou navegação HTTPS | formulário Noah com prova privada e publicação |
@@ -152,6 +156,10 @@ O mesmo botão da empresa deverá iniciar checkout tanto incorporado quanto no d
 Essa capacidade depende de ofertas comerciais e sessões de checkout do domínio D6. Até a entrega do servidor, a Te Pinta mantém a consulta por WhatsApp identificada como orçamento. A implementação será uma extensão tipada `startCheckout()` do cliente unificado, com teste nos dois modos e confirmação no servidor.
 
 ## Adaptar o catálogo da empresa
+
+`listCompanyItems()` e `getCompanyItem(itemId)` usam `/api/catalog/companies/{slug}/items` e `/{itemId}`. Itens têm `kind` PRODUCT/SERVICE/MENU_ITEM, SKU opcional, título, descrição, categoria, coleções e mídia com direitos declarados. O catálogo é declaração da empresa (`COMPANY_DECLARATION`), separado do passaporte global. Apenas revisões publicadas de empresa reivindicada aparecem; rascunhos permanecem privados. Uma edição por MCP só muda a página depois de publicada e relida.
+
+O `itemId` comercial não é `productId`. Abra o detalhe próprio `/suppliers/{slug}/catalog/{itemId}` quando precisar de uma página Noah; não use esse ID em `openProduct()`, opiniões/reacões de produto ou `mountNoahProductActions()`. Não invente preço observado, compra ou nota para um item próprio. Preço vigente, estoque e checkout ainda dependem da frente comercial.
 
 Preserve o contrato de conteúdo e os IDs de produto/variante que a empresa já utiliza. Use `listPublishedProducts()` para aplicar conteúdo editorial aos produtos associados por IDs ou para exibir uma seção editorial separada. Variantes, preço vigente e disponibilidade dependem dos dados comerciais da empresa. Não adapte todas as lojas ao formato de um piloto específico.
 

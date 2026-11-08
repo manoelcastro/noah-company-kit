@@ -29,7 +29,7 @@ class InputError extends Error {}
 function publicCompanyProfile(company, expectedSlug) {
   const addressKeys = ['street', 'number', 'district', 'city', 'state', 'postalCode'];
   if (!company || company.slug !== expectedSlug || !validProductId(company.id)
-    || typeof company.cnpj !== 'string' || !/^\d{14}$/.test(company.cnpj)
+    || !(company.cnpj === null || (typeof company.cnpj === 'string' && /^\d{14}$/.test(company.cnpj)))
     || typeof company.legalName !== 'string'
     || !(company.tradeName === null || typeof company.tradeName === 'string')
     || !(company.phone === null || typeof company.phone === 'string')
@@ -87,6 +87,53 @@ function checkPageOptions({ cursor, limit = 24 } = {}) {
 function validProductId(productId) {
   return typeof productId === 'string'
     && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(productId);
+}
+
+function catalogText(value, max) {
+  return typeof value === 'string' && value.trim().length > 0 && value.length <= max;
+}
+
+function catalogPublicUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && !url.username && !url.password && !url.search && !url.hash
+      && url.hostname.includes('.') && !/^\d[.\d]+$/.test(url.hostname)
+      && !/\.(?:localhost|local|internal)$/.test(url.hostname);
+  } catch { return false; }
+}
+
+// Explicit projection: a native item is a company declaration, never a fiscal product.
+function publicCompanyItem(value) {
+  const c = value?.content;
+  if (!validProductId(value?.itemId) || !Number.isInteger(value.revision) || value.revision < 1
+    || value.source !== 'COMPANY_DECLARATION' || !c
+    || !['PRODUCT', 'SERVICE', 'MENU_ITEM'].includes(c.kind)
+    || !(c.sku === null || catalogText(c.sku, 80))
+    || !catalogText(c.title, 200) || !catalogText(c.description, 4_000)
+    || !(c.category === null || catalogText(c.category, 120))
+    || !Array.isArray(c.collections) || c.collections.length > 20
+    || !c.collections.every((v) => catalogText(v, 120))
+    || !Array.isArray(c.media) || c.media.length > 12
+    || !c.media.every((m) => m && catalogPublicUrl(m.url)
+      && (m.sourceUrl === null || catalogPublicUrl(m.sourceUrl))
+      && catalogText(m.license, 120) && catalogText(m.alt, 200))) {
+    throw new Error('Invalid public company item.');
+  }
+  return {
+    itemId: value.itemId, revision: value.revision, source: 'COMPANY_DECLARATION',
+    content: {
+      kind: c.kind, sku: c.sku, title: c.title, description: c.description, category: c.category,
+      collections: [...c.collections],
+      media: c.media.map((m) => ({ url: m.url, sourceUrl: m.sourceUrl, license: m.license, alt: m.alt })),
+    },
+  };
+}
+
+function catalogCompany(value, expectedSlug) {
+  if (!validProductId(value?.id) || value.slug !== expectedSlug) {
+    throw new Error('Invalid public company catalog.');
+  }
+  return { id: value.id, slug: value.slug };
 }
 
 function opinionTarget(target) {
@@ -386,6 +433,37 @@ export function createNoahCompanyClient({
     return page;
   }
 
+  async function readCompanyItems(itemId, options) {
+    const { cursor, limit } = checkPageOptions(options);
+    if ((cursor !== undefined && !validProductId(cursor))
+      || (itemId !== undefined && !validProductId(itemId))) throw new TypeError('Invalid company item ID or cursor.');
+    await connect();
+    if (closed) throw new Error('Client closed.');
+    const suffix = itemId === undefined ? '' : `/${itemId}`;
+    const url = new URL(`/api/catalog/companies/${encodeURIComponent(companySlug)}/items${suffix}`, origin);
+    if (itemId === undefined) {
+      url.searchParams.set('limit', String(limit));
+      if (cursor !== undefined) url.searchParams.set('cursor', cursor);
+    }
+    const response = await fetchImpl(url.href, {
+      method: 'GET', headers: { Accept: 'application/json' }, credentials: 'omit',
+      cache: 'no-store', signal: AbortSignal.timeout(timeoutMs),
+    });
+    if (!response.ok) throw new Error(`Noah não retornou os itens da empresa (${response.status}).`);
+    const result = await response.json();
+    const company = catalogCompany(result?.company, companySlug);
+    if (itemId !== undefined) {
+      const item = publicCompanyItem(result.item);
+      if (item.itemId !== itemId) throw new Error('Invalid public company item identity.');
+      return { company, item };
+    }
+    if (!Array.isArray(result.items)
+      || (result.page?.nextCursor !== null && !validProductId(result.page?.nextCursor))) {
+      throw new Error('Invalid public company items page.');
+    }
+    return { company, items: result.items.map(publicCompanyItem), page: { nextCursor: result.page.nextCursor } };
+  }
+
   async function listOpinions(target, { q, cursor, limit = 20 } = {}) {
     opinionTarget(target);
     checkPageOptions({ cursor, limit });
@@ -522,6 +600,8 @@ export function createNoahCompanyClient({
 
   return {
     connect, getCompanyProfile, listObservedProducts, listPublishedProducts, openProduct,
+    listCompanyItems: (options) => readCompanyItems(undefined, options),
+    getCompanyItem: (itemId) => readCompanyItems(itemId),
     listCompanyOpinions,
     listProductOpinions: (productId, options) => listOpinions({ targetType: 'PRODUCT', targetId: productId }, options),
     openOpinionComposer,

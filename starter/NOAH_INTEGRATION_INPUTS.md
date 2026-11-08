@@ -15,7 +15,7 @@ Preencha este arquivo no repositório da página antes de iniciar a integração
 | Origem Noah para produção | PENDENTE |
 | URL HTTPS definitiva da página | PENDENTE |
 | Hospedagem e configuração de `frame-ancestors` | PENDENTE |
-| Versão fixa do SDK | `@noah/company-web@0.5.0` |
+| Versão fixa do SDK | `@noah/company-web@0.6.0` |
 | Formato da vitrine | PENDENTE |
 | Fonte atual do conteúdo (ex.: `DEMO`, `COMPANY_CATALOG`, `CMS_PUBLISHED`, `MIXED`) | PENDENTE |
 | Compra atual (ex.: `QUOTE_ONLY`, `EXISTING_CHECKOUT`, `NOAH_CHECKOUT`) | PENDENTE |

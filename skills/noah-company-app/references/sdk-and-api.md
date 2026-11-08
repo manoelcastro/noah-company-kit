@@ -1,6 +1,6 @@
 # SDK, API pública e microapp
 
-Use os tipos `CompanyAppClient`, `PublicCompanyProfile`, `ObservedCompanyPage`, `PublishedCompanyPage` e `PublicOpinion` de `index.d.ts` da revisão instalada. A tabela abaixo orienta o uso; não substitui o contrato da versão.
+Use os tipos `CompanyAppClient`, `PublicCompanyProfile`, `ObservedCompanyPage`, `PublishedCompanyPage`, `CompanyCatalogItem`, `CompanyCatalogPage` e `PublicOpinion` de `index.d.ts` da revisão instalada. Perfil aceita `cnpj: null` para negócio com CPF, sem retornar o documento privado. A tabela abaixo orienta o uso; não substitui o contrato da versão.
 
 ## Inicialização e dados
 
@@ -25,6 +25,8 @@ Em projeto estático, importe do arquivo ESM versionado copiado do kit. Com rend
 | Perfil e endereço públicos | `getCompanyProfile()` | `GET /api/catalog/companies/{slug}` |
 | Produtos observados em notas | `listObservedProducts({ cursor, limit })` | `GET /api/catalog/companies/{slug}` |
 | Conteúdo editorial publicado | `listPublishedProducts({ cursor, limit })` | `GET /api/catalog/companies/{slug}/showcase` |
+| Catálogo próprio sem nota | `listCompanyItems({ cursor, limit })` | `GET /api/catalog/companies/{slug}/items` |
+| Um item próprio publicado | `getCompanyItem(itemId)` | `GET /api/catalog/companies/{slug}/items/{itemId}` |
 | Opiniões da empresa | `listCompanyOpinions(options)` | `GET /api/catalog/opinions?targetType=COMPANY&targetId=...` |
 | Opiniões de produto Noah associado | `listProductOpinions(productId, options)` | `GET /api/catalog/opinions?targetType=PRODUCT&targetId=...` |
 | Totais sociais | `getReactionSummary(target)` | `GET /api/catalog/reactions?targetType=...&targetId=...` |
@@ -33,6 +35,8 @@ Em projeto estático, importe do arquivo ESM versionado copiado do kit. Com rend
 Prefira o SDK no browser. Em um adaptador de servidor autorizado pelo projeto, as leituras públicas podem usar esses endpoints HTTPS sem cookie/token; preserve paginação, revisão/ETag quando presentes, formato e identificação da empresa. Não use a resposta REST bruta como se já fosse a projeção normalizada do SDK: o SDK transforma `unitPrice` em `observedUnitPrice`, por exemplo. Não presuma CORS para qualquer endpoint Noah fora das leituras públicas documentadas.
 
 Faça a paginação por `page.nextCursor`. Observe `observedOn` ao apresentar preço histórico; `availability: NOT_CONFIRMED` não é estoque. O conteúdo publicado contém `productId`, `revision` e `content` com `title`, `description`, `category`, `collections`, `media` e `provenance`. Mantenha um adaptador para a estrutura visual da empresa e vínculos explícitos entre IDs locais, variantes e IDs Noah. Renderize texto como texto.
+
+Catálogo próprio usa `itemId`, `revision`, `source: COMPANY_DECLARATION` e conteúdo `kind`, `sku`, título, descrição, categoria, coleções e mídia. Não há preço ou evidência fiscal. `itemId` nunca vai para `openProduct()`, ações sociais/opiniões de produto ou `mountNoahProductActions()`. O detalhe próprio Noah é `/suppliers/{slug}/catalog/{itemId}`. Leituras públicas nos dois modos omitem credenciais, e o SDK descarta campos privados/rascunho fora da projeção. Verifique a presença das ferramentas `company_catalog_*` no ambiente antes de integrar.
 
 ## Interação, opiniões e controles
 

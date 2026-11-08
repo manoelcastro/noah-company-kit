@@ -3,7 +3,7 @@ export type NoahTheme = 'light' | 'dark' | 'system';
 export interface PublicCompanyProfile {
   id: string;
   slug: string;
-  cnpj: string;
+  cnpj: string | null;
   legalName: string;
   tradeName: string | null;
   phone: string | null;
@@ -79,6 +79,33 @@ export interface PublishedCompanyPage {
   page: { nextCursor: string | null };
 }
 
+/** Native identity and company declaration; itemId is not a Product Graph productId. */
+export interface CompanyCatalogItem {
+  itemId: string;
+  revision: number;
+  source: 'COMPANY_DECLARATION';
+  content: {
+    kind: 'PRODUCT' | 'SERVICE' | 'MENU_ITEM';
+    sku: string | null;
+    title: string;
+    description: string;
+    category: string | null;
+    collections: string[];
+    media: Array<{ url: string; sourceUrl: string | null; license: string; alt: string }>;
+  };
+}
+
+export interface CompanyCatalogPage {
+  company: { id: string; slug: string };
+  items: CompanyCatalogItem[];
+  page: { nextCursor: string | null };
+}
+
+export interface CompanyCatalogItemResponse {
+  company: { id: string; slug: string };
+  item: CompanyCatalogItem;
+}
+
 export interface PublicOpinion {
   id: string;
   targetType: 'PRODUCT' | 'COMPANY';
@@ -120,6 +147,8 @@ export interface CompanyAppClient {
   setControlsMounted(mounted: boolean): Promise<{ mounted: boolean }>;
   listObservedProducts(options?: { cursor?: string; limit?: number }): Promise<ObservedCompanyPage>;
   listPublishedProducts(options?: { cursor?: string; limit?: number }): Promise<PublishedCompanyPage>;
+  listCompanyItems(options?: { cursor?: string; limit?: number }): Promise<CompanyCatalogPage>;
+  getCompanyItem(itemId: string): Promise<CompanyCatalogItemResponse>;
   openProduct(productId: string): Promise<{ opened: true }>;
   onTheme(callback: (theme: NoahTheme) => void): () => void;
   close(): void;

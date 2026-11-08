@@ -256,6 +256,94 @@ test('public company information is tenant-bound and credential-free in both mod
   host.close();
 });
 
+test('CPF business profiles stay public-name-only in standalone and embedded modes', async () => {
+  const p = pair();
+  const company = {
+    id: '47e8cae4-4bab-442a-88d8-d62761593165', slug: 'te-pinta', cnpj: null,
+    legalName: 'Te Pinta Pequena', tradeName: null, phone: null,
+    address: { street: null, number: null, district: null, city: null, state: null, postalCode: null },
+    coordinates: null, locationVerified: false, status: 'CLAIMED',
+  };
+  const catalog = { company: { ...company, cpf: 'private', creationKey: 'private' }, products: [], page: { nextCursor: null } };
+  const host = mountNoahMiniappHost({
+    frame: p.frame, appOrigin: p.appOrigin, companySlug: 'te-pinta', windowObject: p.hostWindow,
+    listObservedProducts: async () => catalog, openProduct: () => {},
+  });
+  for (const mode of ['embedded', 'standalone']) {
+    const client = createNoahCompanyClient({
+      noahOrigin: p.hostOrigin, companySlug: 'te-pinta', windowObject: p.childWindow, mode,
+      fetchImpl: async () => ({ ok: true, json: async () => catalog }),
+    });
+    try { assert.deepEqual(await client.getCompanyProfile(), company); }
+    finally { client.close(); }
+  }
+  host.close();
+});
+
+test('native company items preserve identity and project only public fields in both modes', async () => {
+  const p = pair();
+  const itemId = '652876c1-fa68-4352-b96a-e3167f76371d';
+  const company = { id: '47e8cae4-4bab-442a-88d8-d62761593165', slug: 'te-pinta' };
+  const item = {
+    itemId, revision: 2, source: 'COMPANY_DECLARATION',
+    content: { kind: 'SERVICE', sku: null, title: 'Pintura', description: 'Atividade criativa', category: null,
+      collections: ['Férias'], media: [{ url: 'https://images.example/pintura.jpg', sourceUrl: null, license: 'Própria', alt: 'Pintura' }] },
+  };
+  let reads = 0;
+  const host = mountNoahMiniappHost({
+    frame: p.frame, appOrigin: p.appOrigin, companySlug: 'te-pinta', windowObject: p.hostWindow,
+    listObservedProducts: async () => { throw new Error('Native items must use the public endpoint.'); }, openProduct: () => {},
+  });
+  for (const mode of ['embedded', 'standalone']) {
+    const client = createNoahCompanyClient({
+      noahOrigin: p.hostOrigin, companySlug: company.slug, windowObject: p.childWindow, mode,
+      fetchImpl: async (url, options) => {
+        reads++;
+        assert.equal(options.credentials, 'omit');
+        assert.equal(options.cache, 'no-store');
+        const dirty = { ...item, cpf: 'private', productId: itemId, publishedRevision: 3,
+          content: { ...item.content, private: 'draft', media: item.content.media.map((m) => ({ ...m, private: 'private' })) } };
+        if (url.endsWith('/' + itemId)) return { ok: true, json: async () => ({ company: { ...company, cpf: 'private' }, item: dirty }) };
+        assert.equal(url, `${p.hostOrigin}/api/catalog/companies/te-pinta/items?limit=2&cursor=${itemId}`);
+        return { ok: true, json: async () => ({ company: { ...company, cpf: 'private' }, items: [dirty], page: { nextCursor: itemId } }) };
+      },
+    });
+    try {
+      assert.deepEqual(await client.listCompanyItems({ limit: 2, cursor: itemId }), { company, items: [item], page: { nextCursor: itemId } });
+      assert.deepEqual(await client.getCompanyItem(itemId), { company, item });
+      await assert.rejects(() => client.getCompanyItem('../private'), /Invalid company item/);
+      await assert.rejects(() => client.listCompanyItems({ cursor: 'not-an-id' }), /Invalid company item/);
+    } finally { client.close(); }
+  }
+  assert.equal(reads, 4);
+  host.close();
+});
+
+test('native catalog rejects tenant/identity changes, unsupported provenance and unsafe media', async () => {
+  const itemId = '652876c1-fa68-4352-b96a-e3167f76371d';
+  const company = { id: '47e8cae4-4bab-442a-88d8-d62761593165', slug: 'te-pinta' };
+  const item = { itemId, revision: 1, source: 'COMPANY_DECLARATION',
+    content: { kind: 'MENU_ITEM', sku: null, title: 'Lanche', description: 'Lanche da casa', category: null, collections: [], media: [] } };
+  let payload = { company, item };
+  const w = { location: { assign() {} } };
+  w.parent = w;
+  const client = createNoahCompanyClient({ noahOrigin: 'https://dev.noahero.com', companySlug: 'te-pinta', windowObject: w,
+    fetchImpl: async () => ({ ok: true, json: async () => payload }) });
+  try {
+    payload = { company: { ...company, slug: 'outra' }, item };
+    await assert.rejects(() => client.getCompanyItem(itemId), /Invalid public company catalog/);
+    payload = { company, item: { ...item, itemId: company.id } };
+    await assert.rejects(() => client.getCompanyItem(itemId), /Invalid public company item identity/);
+    payload = { company, item: { ...item, source: 'FISCAL' } };
+    await assert.rejects(() => client.getCompanyItem(itemId), /Invalid public company item/);
+    payload = { company, item: { ...item, content: { ...item.content,
+      media: [{ url: 'javascript:alert(1)', sourceUrl: null, license: 'Própria', alt: 'Lanche' }] } } };
+    await assert.rejects(() => client.getCompanyItem(itemId), /Invalid public company item/);
+    payload = { company, items: [item], page: { nextCursor: 'bad' } };
+    await assert.rejects(() => client.listCompanyItems(), /Invalid public company items page/);
+  } finally { client.close(); }
+});
+
 test('embedded menu and reaction controls delegate to the native host with the bound company', async () => {
   const p = pair();
   const company = {
