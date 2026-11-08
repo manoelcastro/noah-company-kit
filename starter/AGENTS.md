@@ -8,6 +8,10 @@ O ponto de entrada para instalação e atualização é `https://github.com/mano
 
 Entregue **um único webapp** que funcione no domínio próprio da empresa e dentro do Noah. O visual, a navegação, campanhas e conteúdo editorial são da empresa. A busca de produtos, empresas e preços observados do Noah continua independente da página. Um erro no webapp não pode retirar a empresa ou seus produtos da busca.
 
+A empresa continuará modificando o site por prompt. Prepare conteúdo e regiões editáveis com IDs estáveis, campos/schema e versão próprios do projeto, separados do renderer, para capa, textos, banners, destaques, ordem e opções visuais pertinentes ao briefing. Novas estruturas fora desse contrato evoluem pelo código e prévia, preservando a liberdade visual. O CMS Noah atual é por produto e o SDK 0.5 não implementa edição da composição do site nem regras de promoção; registre essas integrações como pendentes e não invente endpoints/produtos para simular suporte.
+
+Promoção/preço/validade e pausa de venda pertencem ao backend comercial autoritativo; o banner apresenta essa regra. Ocultar da vitrine, pausar venda e arquivar têm efeitos diferentes. Edição empresarial usa a autoridade da empresa, rascunho, prévia e publicação autorizada; o assistente do cliente não recebe ferramentas de edição da loja.
+
 A página customizada ativa é a entrada direta da empresa no Noah. Apresente seus dados públicos com `getCompanyProfile()`. Exiba o botão opcional **Abrir o Noah** apenas quando o SDK confirmar `mode: 'standalone'`. No estado de conexão ou no modo incorporado, mantenha esse botão oculto.
 
 Opiniões sobre a empresa usam `listCompanyOpinions()`. Opiniões de produto usam `listProductOpinions(productId)` com um vínculo explícito ao ID Noah e podem aparecer em todas as lojas que revendem aquele produto. Apresente o selo **nota apresentada**, o pseudônimo e a citação da revisão recebida. O formulário de envio abre com `openOpinionComposer()` no Noah. A prova é conferida no servidor dentro da janela de 90 dias definida para o piloto.

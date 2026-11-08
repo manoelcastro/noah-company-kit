@@ -2,6 +2,18 @@
 
 O Noah já oferece CMS e servidor MCP. Não crie outro CMS para reproduzir essas funções. A empresa pode preservar seu catálogo visual, campanhas e regras próprias por meio de um adaptador para as revisões editoriais Noah.
 
+## Preparar edição do site por prompt
+
+A empresa deve poder continuar pedindo mudanças por conversa. Ao construir ou adaptar a página, identifique regiões/componentes editáveis, com IDs estáveis, campos, limites, versão e ligação à fonte de conteúdo. Inclua no briefing quais pedidos devem ser suportados: trocar capa/texto, destacar produtos, ordenar seções ou apresentar campanhas. Não fixe um modelo visual igual para todas as empresas; use os componentes e o design do projeto.
+
+O CMS Noah descrito abaixo é **por produto**. No SDK 0.5 não há APIs para editar/publicar composição do site, promoções ou disponibilidade de venda. Esses contratos estão em planejamento. Use somente schemas e ferramentas efetivamente presentes no ambiente; não invente `site_*`, campos de desconto em conteúdo editorial ou produto fictício para armazenar banner. Prepare um adaptador e um contrato de conteúdo versionado do próprio projeto, preservando sua fonte existente; registre o que depende do CMS de site futuro, sem criar backend CMS paralelo ou declarar edição remota pronta.
+
+Mudanças suportadas pelo contrato editável seguem rascunho, revisão esperada, prévia/diferenças e publicação autorizada. Novo layout/componente ou funcionalidade fora desse contrato segue o código do projeto, com revisão/branch, build, preview e publicação permitida. O agente empresarial e um agente externo autorizado podem participar, com a autoridade da empresa; o assistente do consumidor não recebe essas permissões.
+
+Separe ocultar uma imagem/produto na apresentação, pausar sua venda e arquivar o cadastro. A pausa de venda precisa ser respeitada no backend que autoriza pedidos, mesmo com página/carrinho antigos; alterações na apresentação não apagam passaporte ou observações fiscais globais. Promoção tem regra de preço/condição e período/fuso no backend comercial real da empresa ou do Noah quando disponível, ligados ao banner/destaque. Texto promocional sozinho não cria desconto. Preserve integrações comerciais existentes e não atribua capacidade ao Noah antes da entrega.
+
+Use uma prévia real em mobile e desktop. Restauração da apresentação não altera compras confirmadas nem torna uma oferta expirada válida novamente. Registre versão do conteúdo/renderer e pendências no projeto para outro agente retomar sem repetir ou sobrescrever trabalho.
+
 ## Conectar e identificar a empresa
 
 Use OAuth no cliente MCP do agente, fora do navegador público. QA usa `https://dev.noahero.com/api/mcp`; produção exige origem verificada. Descubra ferramentas e schemas com `tools/list` e confira `companyId`, slug, claim e associação ativa da pessoa autenticada. Não peça token pelo chat nem grave credenciais no projeto da página.

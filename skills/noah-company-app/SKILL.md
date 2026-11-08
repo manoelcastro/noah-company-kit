@@ -1,6 +1,6 @@
 ---
 name: noah-company-app
-description: Criar ou adaptar páginas empresariais integradas ao Noah, em domínio próprio e como microapp, usando o SDK web, a API pública e o CMS por MCP. Use também para retomar a integração ou enriquecer o catálogo editorial da empresa; não impõe um layout visual.
+description: Criar ou adaptar páginas empresariais integradas ao Noah, em domínio próprio e como microapp, usando SDK, API pública e CMS por MCP. Use também para preparar edição empresarial por prompt, retomar a integração ou enriquecer o catálogo; não impõe um layout visual.
 ---
 
 # Páginas empresariais integradas ao Noah
@@ -8,6 +8,8 @@ description: Criar ou adaptar páginas empresariais integradas ao Noah, em domí
 Construa a experiência da empresa com o usuário. Leia as instruções do projeto, `NOAH_DESIGN_BRIEF.md` e `NOAH_INTEGRATION_INPUTS.md`. Preserve trabalho existente. Se os arquivos ainda não existirem, use os templates do kit oficial, sem inventar identificadores, domínios ou permissões.
 
 O briefing define a identidade, as referências visuais, os objetivos e as jornadas. Não transforme esta skill em um template de vitrine universal. Escolha a tecnologia adequada ao projeto e aproveite o catálogo, conteúdo e navegação já existentes.
+
+Prepare a página para a empresa continuar operando por conversa: conteúdo, banners, destaques, ordem de seções e opções visuais suportadas têm IDs estáveis, schemas e fonte de dados explícita, separados do renderer. Leia [CMS por MCP](references/cms.md) para os limites atuais e o fluxo de autoria. Isso não exige um editor visual ou layout universal. Um pedido estrutural fora do contrato segue revisão do código, build e prévia; atualizar o kit não concede permissão de publicação.
 
 ## Referências conforme a tarefa
 

@@ -35,4 +35,15 @@ Referências orientam o design, sem impor um clone. Registre quais decisões for
 - Recursos Noah relevantes para esta experiência: A DEFINIR
 - Domínio, hospedagem, restrições e aprovações para publicação: A DEFINIR
 
+## Operação da empresa por prompt
+
+- Exemplos de pedidos do responsável: A DEFINIR (ex.: destacar um produto, trocar capa, criar oferta com validade, pausar venda).
+- Regiões editáveis, IDs estáveis, campos/schema e opções visuais permitidas: A DEFINIR
+- Fonte atual e versão do conteúdo/apresentação; adaptador para CMS: A DEFINIR
+- Fonte autoritativa de preço, promoção e disponibilidade de venda: A DEFINIR
+- Como revisar diferenças, abrir prévia e publicar/restaurar: A DEFINIR
+- Pedidos que exigem novo componente ou revisão de código: A DEFINIR
+
+Não transformar esses campos em um layout fixo. Diferencie o que o projeto já suporta do que depende de contratos Noah futuros; preparar o conteúdo editável não significa que edição remota ou promoção comercial já estejam habilitadas.
+
 Os dados confirmados de empresa, ambiente, SDK e CMS ficam em `NOAH_INTEGRATION_INPUTS.md`. O briefing não autoriza recursos de servidor ausentes nem substitui as permissões de publicação.
