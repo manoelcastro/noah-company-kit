@@ -1,4 +1,4 @@
-# SDK de páginas empresariais do Noah (piloto 0.6)
+# SDK de páginas empresariais do Noah (piloto 0.6.1)
 
 Pacote sem dependências para páginas feitas pela própria empresa ou por um agente de desenvolvimento. **A mesma página funciona no domínio da empresa e incorporada no Noah.** `createNoahCompanyClient()` oferece uma interface única: no Noah usa a ponte de mensagens; no domínio próprio consulta a API pública por HTTPS, sem cookie ou token. O catálogo recebido é uma projeção pública dos produtos observados daquela empresa.
 
@@ -20,16 +20,20 @@ Siga [`INSTALL.md`](INSTALL.md) para obter a revisão atual verificada do reposi
 npm install --save-exact 'https://github.com/manoelcastro/noah-company-kit/archive/SHA_COMPLETO.tar.gz'
 ```
 
-Como alternativa offline, entregue o arquivo `noah-company-web-0.6.0.tgz` gerado por `npm pack` e instale com `npm install --save ./noah-company-web-0.6.0.tgz`, mantendo o arquivo no projeto e registrando sua origem/revisão. O pacote inclui o SDK, a skill e os templates.
+Como alternativa offline, entregue o arquivo `noah-company-web-0.6.1.tgz` gerado por `npm pack` e instale com `npm install --save ./noah-company-web-0.6.1.tgz`, mantendo o arquivo no projeto e registrando sua origem/revisão. O pacote inclui o SDK, a skill e os templates.
 
-O kit é distribuído por Git e arquivo `.tgz`; `private: true` impede publicação acidental no registro npm e não impede instalar pelo repositório. Para uma página estática sem bundler, copie **o arquivo ESM versionado sem alterá-lo** para `dist/js/noah-company.v0.6.0.js` e importe com caminho relativo. Se houver PWA, inclua o arquivo no cache do shell e incremente a versão do service worker.
+O kit é distribuído por Git e arquivo `.tgz`; `private: true` impede publicação acidental no registro npm e não impede instalar pelo repositório. Para uma página estática sem bundler, copie **o arquivo ESM versionado sem alterá-lo** para `dist/js/noah-company.v0.6.1.js` e importe com caminho relativo. Se houver PWA, inclua o arquivo no cache do shell e incremente a versão do service worker.
+
+Os controles da empresa e do produto usam o símbolo preenchido do Noah. Na
+página incorporada, os controles acompanham o tema informado pelo host. No
+domínio independente, acompanham o esquema claro ou escuro do dispositivo.
 
 ## Código da página da empresa
 
 ```js
 // Com bundler: from '@noah/company-web'.
-// Na Te Pinta estática: from './noah-company.v0.6.0.js'.
-import { createNoahCompanyClient } from './noah-company.v0.6.0.js';
+// Em uma página estática: from './noah-company.v0.6.1.js'.
+import { createNoahCompanyClient } from './noah-company.v0.6.1.js';
 
 const noah = createNoahCompanyClient({
   noahOrigin: 'https://dev.noahero.com',

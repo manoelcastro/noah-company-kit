@@ -626,20 +626,27 @@ const OA_PATHS = [
   'M222 245 C216 231 214 216 214 200 C214 154 251 117 296 117',
 ];
 
+let oaMaskIndex = 0;
+
 function oaIcon(doc) {
-  const svg = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', '-6.72 18.74 485.72 278.46');
-  svg.setAttribute('aria-hidden', 'true');
-  svg.setAttribute('fill', 'none');
-  svg.setAttribute('stroke', 'currentColor');
-  svg.setAttribute('stroke-width', '16');
-  svg.setAttribute('stroke-linecap', 'round');
-  svg.setAttribute('stroke-linejoin', 'round');
-  for (const d of OA_PATHS) {
-    const path = doc.createElementNS(svg.namespaceURI, 'path');
-    path.setAttribute('d', d);
-    svg.append(path);
-  }
+  const create = (tag, attributes) => {
+    const element = doc.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (const [name, value] of Object.entries(attributes)) element.setAttribute(name, value);
+    return element;
+  };
+  const svg = create('svg', { viewBox: '-6.72 18.74 485.72 278.46', 'aria-hidden': 'true', focusable: 'false' });
+  const maskId = `noah-oa-cut-${++oaMaskIndex}`;
+  const mask = create('mask', { id: maskId, maskUnits: 'userSpaceOnUse', x: '0', y: '0', width: '490', height: '310' });
+  mask.append(
+    create('rect', { width: '490', height: '310', fill: 'white' }),
+    create('path', { d: OA_PATHS[1], fill: 'none', stroke: 'black', 'stroke-width': '5.5', 'stroke-linecap': 'round' }),
+  );
+  const defs = create('defs', {});
+  defs.append(mask);
+  svg.append(defs, create('path', {
+    d: OA_PATHS[0], mask: `url(#${maskId})`, fill: 'currentColor', stroke: 'currentColor',
+    'stroke-width': '5.5', 'stroke-linecap': 'round', 'stroke-linejoin': 'round',
+  }));
   return svg;
 }
 
@@ -664,24 +671,36 @@ function oaButton(doc, label) {
   return button;
 }
 
+const OA_DARK_PALETTE = `
+  --oa-surface:#24202b; --oa-ink:#f7f4fc; --oa-border:#52485f; --oa-hover:#352e41;
+  --oa-focus:#cab5ff; --oa-shadow:#00000045; --oa-shade:#00000065;
+`;
+const OA_PALETTE = `
+  :host { --oa-surface:#fff; --oa-ink:#17191f; --oa-border:#e1dcec; --oa-hover:#f5f1ff;
+    --oa-focus:#6d42cd; --oa-shadow:#21173726; --oa-shade:#21173726; }
+  :host([data-noah-theme='dark']) { ${OA_DARK_PALETTE} }
+  @media (prefers-color-scheme:dark) { :host(:not([data-noah-theme='light'])) { ${OA_DARK_PALETTE} } }
+`;
 const OA_BUTTON_CSS = `
+  ${OA_PALETTE}
   button { display:grid; place-items:center; width:56px; height:56px; box-sizing:border-box; padding:9px;
-    border:1px solid #e1dcec; border-radius:50%; color:#11005e; background:#fff;
-    box-shadow:0 4px 18px #11005e26; cursor:pointer; touch-action:none; -webkit-tap-highlight-color:transparent; }
-  button:hover { background:#f5f1ff; } button:focus-visible { outline:3px solid #6d42cd; outline-offset:3px; }
+    border:1px solid var(--oa-border); border-radius:50%; color:var(--oa-ink); background:var(--oa-surface);
+    box-shadow:0 4px 18px var(--oa-shadow); cursor:pointer; touch-action:none; -webkit-tap-highlight-color:transparent; }
+  button:hover { background:var(--oa-hover); } button:focus-visible { outline:3px solid var(--oa-focus); outline-offset:3px; }
   svg { width:36px; height:28px; pointer-events:none; }
 `;
 
 /** One menu engine for the company orb and product images. It never writes a reaction itself. */
-function radialActions({ client, target, trigger, surface, documentObject: doc, nonce }) {
+function radialActions({ client, target, trigger, surface, controls, initialTheme, documentObject: doc, nonce }) {
   const win = doc.defaultView;
   const host = doc.createElement('div');
   host.setAttribute('data-noah-radial-menu', '');
   host.hidden = true;
   const shadow = styledShadow(doc, host, `
-    :host { position:fixed; inset:0; z-index:2147483000; pointer-events:none; color:#11005e; font:600 12px system-ui,sans-serif; }
+    ${OA_PALETTE}
+    :host { position:fixed; inset:0; z-index:2147483000; pointer-events:none; color:var(--oa-ink); font:600 12px system-ui,sans-serif; }
     :host([hidden]) { display:none!important; }
-    .shade { position:absolute; inset:0; background:#11005e20; pointer-events:auto; }
+    .shade { position:absolute; inset:0; background:var(--oa-shade); pointer-events:auto; }
     [role=menu] { position:absolute; inset:0; pointer-events:none; }
     button { font:inherit; color:inherit; cursor:pointer; touch-action:none; -webkit-tap-highlight-color:transparent; }
     .action { position:absolute; width:64px; height:64px; padding:0; border:0; background:transparent;
@@ -691,18 +710,18 @@ function radialActions({ client, target, trigger, surface, documentObject: doc, 
       from { opacity:0; transform:translate(calc(-50% + var(--from-x)),calc(-50% + var(--from-y))) scale(.3); }
       to { opacity:1; transform:translate(-50%,-50%) scale(1); }
     }
-    .disc { display:grid; place-items:center; width:44px; height:44px; border:1px solid #e3dced;
-      border-radius:50%; background:white; box-shadow:0 3px 14px #11005e24; transition:transform .12s,background .12s; }
+    .disc { display:grid; place-items:center; width:44px; height:44px; border:1px solid var(--oa-border);
+      border-radius:50%; background:var(--oa-surface); box-shadow:0 3px 14px var(--oa-shadow); transition:transform .12s,background .12s; }
     .disc svg { width:24px; height:22px; } .glyph { font:26px system-ui; line-height:1; }
-    .label { border-radius:8px; background:white; padding:1px 5px; white-space:nowrap; }
-    .action[data-selected] .disc, .action:focus-visible .disc { background:#11005e; color:white; transform:scale(1.12); }
-    button:focus-visible { outline:3px solid #8156d8; outline-offset:3px; border-radius:22px; }
-    .center { position:absolute; transform:translate(-50%,-50%); width:52px; height:52px; border:1px solid #e3dced;
-      border-radius:50%; background:white; pointer-events:auto; display:grid; place-items:center; box-shadow:0 3px 18px #11005e20; }
+    .label { border-radius:8px; background:var(--oa-surface); padding:1px 5px; white-space:nowrap; }
+    .action[data-selected] .disc, .action:focus-visible .disc { background:var(--oa-ink); color:var(--oa-surface); transform:scale(1.12); }
+    button:focus-visible { outline:3px solid var(--oa-focus); outline-offset:3px; border-radius:22px; }
+    .center { position:absolute; transform:translate(-50%,-50%); width:52px; height:52px; border:1px solid var(--oa-border);
+      border-radius:50%; background:var(--oa-surface); pointer-events:auto; display:grid; place-items:center; box-shadow:0 3px 18px var(--oa-shadow); }
     .center svg { width:34px; height:25px; }
     p { position:absolute; left:50%; bottom:max(16px, env(safe-area-inset-bottom, 0px)); transform:translateX(-50%);
       max-width:calc(100% - 40px); width:max-content; box-sizing:border-box; margin:0; padding:9px 14px;
-      background:white; border-radius:16px; text-align:center; box-shadow:0 3px 18px #11005e20; }
+      background:var(--oa-surface); border-radius:16px; text-align:center; box-shadow:0 3px 18px var(--oa-shadow); }
     @media (prefers-reduced-motion:reduce) { .disc { transition:none; } .action { animation:none; } }
   `, nonce);
   const shade = doc.createElement('div');
@@ -733,6 +752,16 @@ function radialActions({ client, target, trigger, surface, documentObject: doc, 
     return remove;
   };
   let opened = false, closed = false, busy = false, selected = -1, timer, gesture;
+  const applyTheme = theme => {
+    if (closed) return;
+    const scheme = theme === 'light' || theme === 'dark' ? theme : 'system';
+    controls.dataset.noahTheme = scheme;
+    host.dataset.noahTheme = scheme;
+  };
+  applyTheme(initialTheme);
+  const unsubscribeTheme = client.onTheme?.(applyTheme);
+  if (unsubscribeTheme) removers.push(unsubscribeTheme);
+  if (!initialTheme && client.connect) void client.connect().then(context => applyTheme(context.theme)).catch(() => {});
   let suppressClick = false, releaseGesture = () => {}, openListeners = () => {};
   let origin = { x: 0, y: 0 }, positions = [];
   const buttons = actions.map((action, index) => {
@@ -952,7 +981,7 @@ export async function mountNoahControls({
   const trigger = oaButton(documentObject, context.mode === 'embedded' ? 'Menu Noah' : 'Abrir o Noah');
   shadow.append(trigger);
   (container ?? documentObject.body).append(element);
-  const radial = radialActions({ client, trigger, surface: trigger, documentObject, nonce });
+  const radial = radialActions({ client, trigger, surface: trigger, controls: element, initialTheme: context.theme, documentObject, nonce });
   try { await client.setControlsMounted(true); }
   catch { radial.close(); element.remove(); throw new Error('Noah não confirmou os controles da página.'); }
   let closed = false;
@@ -990,7 +1019,7 @@ export function mountNoahProductActions({ client, noahOrigin, element, productId
   `, nonce);
   const trigger = oaButton(doc, 'Ações deste produto no Noah');
   shadow.append(trigger); element.append(badge);
-  const radial = radialActions({ client, target: { targetType: 'PRODUCT', productId }, trigger, surface: element, documentObject: doc, nonce });
+  const radial = radialActions({ client, target: { targetType: 'PRODUCT', productId }, trigger, surface: element, controls: badge, documentObject: doc, nonce });
   let closed = false;
   return {
     open: radial.open,

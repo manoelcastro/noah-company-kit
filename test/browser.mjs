@@ -35,10 +35,14 @@ const html = mode => `<!doctype html>
 <script type="module">
 import { mountNoahControls, mountNoahProductActions } from '/noah-sdk.js';
 window.calls=[];window.imageClicks=0;
+const themeListeners = new Set();
+window.themeListeners = themeListeners;
+window.emitTheme = theme => { for (const listener of themeListeners) listener(theme); };
 document.querySelector('#product-image').addEventListener('click',()=>window.imageClicks++);
 const record=(method,target)=>{window.calls.push({method,target:target??null});return {opened:true}};
 window.client={
-  connect:async()=>({mode:${JSON.stringify(mode)},companySlug:'ceramica',theme:'light',capabilities:[]}),
+  connect:async()=>({mode:${JSON.stringify(mode)},companySlug:'ceramica',theme:${JSON.stringify(mode === 'embedded' ? 'light' : 'system')},capabilities:[]}),
+  onTheme:listener=>{themeListeners.add(listener);return()=>themeListeners.delete(listener)},
   openNoahMenu:async target=>record('menu',target),
   openSocialActions:async target=>record(target.intent.toLowerCase(),target),
   openOpinionComposer:async target=>record('opinion',target),
@@ -122,6 +126,33 @@ async function fixture(browser, size, run, mode = 'embedded') {
 }
 
 const tests = {
+  async 'filled oa and both controls follow host and device themes'({page}) {
+    const background = locator => locator.evaluate(el => getComputedStyle(el).backgroundColor);
+    await page.emulateMedia({ colorScheme: 'dark' });
+    assert.equal(await background(globalTrigger(page)), 'rgb(255, 255, 255)', 'Embedded light overrides device dark');
+    assert.equal(await background(productTrigger(page)), 'rgb(255, 255, 255)');
+    await page.evaluate(() => window.emitTheme('dark'));
+    assert.equal(await background(globalTrigger(page)), 'rgb(36, 32, 43)');
+    assert.equal(await background(productTrigger(page)), 'rgb(36, 32, 43)');
+    await globalTrigger(page).click();
+    await assertMenuOpen(page);
+    const center = visibleMenu(page).locator('.center');
+    assert.equal(await background(center), 'rgb(36, 32, 43)');
+    for (const control of [globalTrigger(page), productTrigger(page), center, action(page, 'menu')]) {
+      const symbol = control.locator('svg > path[mask]');
+      assert.equal(await symbol.getAttribute('fill'), 'currentColor');
+      assert.equal(await control.locator('svg mask').count(), 1);
+    }
+    await page.keyboard.press('Escape');
+    await page.mouse.move(0, 0);
+    await page.evaluate(() => window.emitTheme('system'));
+    await page.emulateMedia({ colorScheme: 'light' });
+    assert.equal(await background(globalTrigger(page)), 'rgb(255, 255, 255)');
+    assert.equal(await background(productTrigger(page)), 'rgb(255, 255, 255)');
+    await page.emulateMedia({ colorScheme: 'dark' });
+    assert.equal(await background(globalTrigger(page)), 'rgb(36, 32, 43)');
+    assert.equal(await background(productTrigger(page)), 'rgb(36, 32, 43)');
+  },
   async 'mouse hold on image and release selects once'({page}) {
     const point=centre(await rect(page.locator('#product-image')));
     await page.mouse.move(point.x,point.y);await page.mouse.down();await page.waitForTimeout(holdMs);
@@ -274,6 +305,7 @@ const tests = {
     await page.waitForTimeout(holdMs);await touch.end();await page.waitForTimeout(80);
     assert.equal(await page.locator('[data-noah-trigger]').count(),0);
     assert.equal(await page.locator('[data-noah-radial-menu]').count(),0);
+    assert.equal(await page.evaluate(()=>window.themeListeners.size),0);
     assert.deepEqual(await realActions(page),[]);
     const mounted=await page.evaluate(()=>window.calls.filter(call=>call.method==='mounted').map(call=>call.mounted));
     assert.deepEqual(mounted,[true,false]);
@@ -291,6 +323,24 @@ try {
     const label=`${size.width}x${size.height} ${name}`;const start=Date.now();
     try {await fixture(browser,size,run);results.push({test:label,status:'passed',ms:Date.now()-start});console.log('PASS',label);}
     catch(error){results.push({test:label,status:'failed',error:String(error.stack||error),ms:Date.now()-start});console.error('FAIL',label,String(error));}
+  }
+  const label = 'standalone controls use device scheme and retain their accessible label';
+  const start = Date.now();
+  try {
+    await fixture(browser, viewportSizes[1], async ({ page }) => {
+      assert.equal(await globalTrigger(page).getAttribute('aria-label'), 'Abrir o Noah');
+      for (const [scheme, color] of [['light', 'rgb(255, 255, 255)'], ['dark', 'rgb(36, 32, 43)']]) {
+        await page.emulateMedia({ colorScheme: scheme });
+        for (const trigger of [globalTrigger(page), productTrigger(page)]) {
+          assert.equal(await trigger.evaluate(el => getComputedStyle(el).backgroundColor), color);
+        }
+      }
+    }, 'standalone');
+    results.push({test:label,status:'passed',ms:Date.now()-start});
+    console.log('PASS', label);
+  } catch(error) {
+    results.push({test:label,status:'failed',error:String(error.stack||error),ms:Date.now()-start});
+    console.error('FAIL',label,String(error));
   }
 } finally {await browser.close();}
 const report={sdkPath,tests:results.length,passed:results.filter(r=>r.status==='passed').length,failed:results.filter(r=>r.status==='failed').length,limits:['Local HTTPS fixtures with stub client; no QA or real data/mutations.','Chromium CDP injects real browser touch input, not a physical iPhone/Safari acceptance.','Tests exercise the provided hooks and existing actions; no backend integration acceptance.'],results};
