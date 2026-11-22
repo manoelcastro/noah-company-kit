@@ -27,6 +27,21 @@
 
 :root[data-theme="light"] { color-scheme: light; }
 
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"] {
+    color-scheme: dark;
+    background: #10171d;
+    color: #edf3f7;
+    --surface: #182229;
+    --muted: #a9b7c1;
+    --border: #34434d;
+    --accent: #78d5bf;
+    --accent-contrast: #10211d;
+    --danger-surface: #351b1b;
+    --danger: #ffb4ad;
+  }
+}
+
 * { box-sizing: border-box; }
 
 body {

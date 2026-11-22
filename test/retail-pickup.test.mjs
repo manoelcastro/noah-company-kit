@@ -265,3 +265,24 @@ test('generated page is responsive and exposes no local commerce or credential p
     assert.doesNotMatch(source, /localStorage|document\.cookie|startCheckout|createCart|confirmPickup/);
   }
 });
+
+test('system theme follows dark preference without overriding explicit light or dark', async (t) => {
+  const source = await readFile(path.join(STARTER, 'app', 'styles.css'), 'utf8');
+  const { output } = await builtApp(t);
+  const generated = await readFile(path.join(output, 'styles.css'), 'utf8');
+  assert.equal(generated, source);
+
+  const mediaStart = source.indexOf('@media (prefers-color-scheme: dark)');
+  const mediaEnd = source.indexOf('\n\n* {', mediaStart);
+  assert.ok(mediaStart > 0);
+  assert.ok(mediaEnd > mediaStart);
+  const systemMedia = source.slice(mediaStart, mediaEnd);
+  assert.match(systemMedia, /:root\[data-theme="system"\]/);
+  assert.match(systemMedia, /color-scheme: dark/);
+  assert.match(systemMedia, /--surface: #182229/);
+  assert.doesNotMatch(systemMedia, /data-theme="light"|data-theme="dark"/);
+
+  assert.ok(source.indexOf(':root[data-theme="dark"]') < mediaStart);
+  assert.ok(source.indexOf(':root[data-theme="light"]') < mediaStart);
+  assert.match(source, /:root\[data-theme="light"\] \{ color-scheme: light; \}/);
+});
