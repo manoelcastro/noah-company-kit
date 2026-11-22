@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Noah template installation v1",
+  "description": "Local, secret-free installation artifact for the retail-pickup starter. It does not create platform authority, inventory, pickup or checkout state.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "apiVersion",
+    "kind",
+    "metadata",
+    "experienceOwner",
+    "scope",
+    "noah",
+    "appearance",
+    "modules"
+  ],
+  "properties": {
+    "apiVersion": {
+      "const": "noah.template-installation/v1"
+    },
+    "kind": {
+      "const": "TemplateInstallation"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "installationId",
+        "template"
+      ],
+      "properties": {
+        "installationId": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+          "description": "Opaque identifier for this local artifact; it is not a persisted Noah installation identity."
+        },
+        "template": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "version"
+          ],
+          "properties": {
+            "id": {
+              "const": "retail-pickup"
+            },
+            "version": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+            }
+          }
+        }
+      }
+    },
+    "experienceOwner": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "companySlug"
+      ],
+      "properties": {
+        "type": {
+          "const": "COMPANY"
+        },
+        "companySlug": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[a-z0-9][a-z0-9-]{0,254}$"
+        }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "unitKey",
+        "unitLabel"
+      ],
+      "properties": {
+        "unitKey": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+          "description": "Stable presentation key local to the starter; it grants no company or inventory authority."
+        },
+        "unitLabel": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "pattern": "^(?=.*\\S)[^\\u0000-\\u001F\\u007F]{1,120}$"
+        }
+      }
+    },
+    "noah": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "origin"
+      ],
+      "properties": {
+        "origin": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://(?:localhost|(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)(?:\\.(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?))*|(?:[0-9]{1,3}\\.){3}[0-9]{1,3})(?::[1-9][0-9]{0,4})?$",
+          "description": "Exact trusted HTTPS origin, without user info, path, query or fragment."
+        }
+      }
+    },
+    "appearance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "defaultTheme"
+      ],
+      "properties": {
+        "defaultTheme": {
+          "type": "string",
+          "enum": [
+            "light",
+            "dark",
+            "system"
+          ]
+        }
+      }
+    },
+    "modules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "catalog"
+      ],
+      "properties": {
+        "catalog": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "enabled"
+          ],
+          "properties": {
+            "enabled": {
+              "const": true
+            }
+          }
+        }
+      }
+    }
+  }
+}
