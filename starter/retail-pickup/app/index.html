@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="system">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <title>Loja no Noah</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div>
+        <p class="eyebrow">Catálogo público Noah</p>
+        <h1 id="company-name">Loja</h1>
+        <p id="unit-label" class="unit-label">Carregando unidade…</p>
+      </div>
+      <button id="open-noah" class="secondary-action" type="button" hidden>Abrir o Noah</button>
+    </header>
+
+    <main>
+      <p id="connection-status" class="connection-status" data-state="loading" aria-live="polite">
+        Conectando ao catálogo Noah…
+      </p>
+      <p id="error-panel" class="error-panel" role="alert" hidden></p>
+
+      <section aria-labelledby="catalog-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Produtos observados</p>
+            <h2 id="catalog-title">Catálogo da empresa</h2>
+          </div>
+          <p>Preços exibidos são observações fiscais históricas. Estoque e disponibilidade não são confirmados.</p>
+        </div>
+        <p id="empty-state" class="empty-state" hidden>Nenhum produto observado está disponível agora.</p>
+        <div id="products" class="product-grid"></div>
+      </section>
+    </main>
+
+    <footer>
+      <p>A unidade identifica somente o contexto visual desta página.</p>
+    </footer>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

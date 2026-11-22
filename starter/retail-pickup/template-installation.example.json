@@ -1,0 +1,30 @@
+{
+  "apiVersion": "noah.template-installation/v1",
+  "kind": "TemplateInstallation",
+  "metadata": {
+    "installationId": "10000000-0000-4000-8000-000000000001",
+    "template": {
+      "id": "retail-pickup",
+      "version": "1.0.0"
+    }
+  },
+  "experienceOwner": {
+    "type": "COMPANY",
+    "companySlug": "loja-de-teste"
+  },
+  "scope": {
+    "unitKey": "centro",
+    "unitLabel": "Unidade Centro"
+  },
+  "noah": {
+    "origin": "https://dev.noahero.com"
+  },
+  "appearance": {
+    "defaultTheme": "system"
+  },
+  "modules": {
+    "catalog": {
+      "enabled": true
+    }
+  }
+}

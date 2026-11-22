@@ -10,6 +10,12 @@ Use o [prompt de instalação](starter/PROMPT_DE_INSTALACAO.md), preenchendo ref
 
 O [briefing visual](starter/NOAH_DESIGN_BRIEF.md) pertence à empresa; o [registro de integração](starter/NOAH_INTEGRATION_INPUTS.md) guarda empresa, ambiente, SHA e versão. Preserve esses arquivos e as instruções existentes ao retomar um projeto. O kit não impõe framework ou layout. Para um projeto já instalado, use [`starter/PROMPT_PARA_AGENTE.md`](starter/PROMPT_PARA_AGENTE.md).
 
+O primeiro pacote instalável está em
+[`starter/retail-pickup`](starter/retail-pickup/README.md). Ele valida o
+manifesto local `noah.template-installation/v1` e gera um único webapp estático
+para acesso direto e incorporado. Nesta versão, a unidade é contexto visual e o
+catálogo é público; carrinho, retirada e checkout permanecem indisponíveis.
+
 O construtor também prepara a operação futura por prompt: regiões editáveis com IDs estáveis, schemas e fonte de conteúdo separados do renderer. O [guia de autoria e CMS](skills/noah-company-app/references/cms.md) distingue apresentação, regras comerciais e revisão de código. O SDK 0.6 ainda não possui APIs para editar composição do site, promoções ou disponibilidade; essas capacidades estão em planejamento. O prompt estável continua o mesmo, e a skill orienta a preparação sem anunciar serviços inexistentes.
 
 ## Instalação durante o desenvolvimento

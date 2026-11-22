@@ -10,8 +10,10 @@
     }
   },
   "scripts": {
-    "test": "node test/bridge.test.js",
-    "test:browser": "node test/browser.mjs"
+    "test": "node test/bridge.test.js && node --test test/retail-pickup.test.mjs",
+    "test:retail-pickup": "node --test test/retail-pickup.test.mjs",
+    "test:browser": "node test/browser.mjs",
+    "build:retail-pickup": "node starter/retail-pickup/build.mjs"
   },
   "engines": {
     "node": ">=20"
